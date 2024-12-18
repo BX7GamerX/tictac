@@ -1,4 +1,5 @@
 use rand::Rng;
+use std::io::Write;
 
 pub struct Cell {
     pub owner: String,
@@ -6,11 +7,20 @@ pub struct Cell {
     pub is_occupied: bool,
     pub index: i32,
     pub position: i32,
-    winning_cell: bool,
+    pub winning_cell: bool,
+    pub owner_id: i32,
 }
 
 impl Cell {
-    fn new(owner: String, symbol: char, is_occupied: bool, index: i32, position: i32, winning_cell: bool) -> Cell {
+    fn new(
+        owner: String,
+        symbol: char,
+        is_occupied: bool,
+        index: i32,
+        position: i32,
+        winning_cell: bool,
+        owner_id: i32,
+    ) -> Cell {
         Cell {
             owner,
             symbol,
@@ -18,24 +28,26 @@ impl Cell {
             index,
             position,
             winning_cell,
+            owner_id,
         }
     }
 }
 pub fn position_to_index(position: i32) -> i32 {
     if position > 6 {
         return position - 7;
-    }else if position > 3 {
+    } else if position > 3 {
         return position - 1;
-    }else {
+    } else {
         return position + 5;
     }
 }
-pub struct Table{
+pub struct Table {
     cells: Vec<Cell>,
-    full : bool,
+    full: bool,
     //winning_combo: Vec<Cell>,
-    play_count : i32,
-    winning_combo: [[usize;3]; 8],
+    play_count: i32,
+    winning_combo: [[usize; 3]; 8],
+    winner: String,
 }
 
 /// Creates a new `Table` instance with default values.
@@ -53,35 +65,38 @@ pub struct Table{
 /// Processes a player's move at the specified index.
 
 /// Checks if the table is full (i.e., no more moves can be made).
-impl Table{
+impl Table {
     pub fn new() -> Table {
-        let mut cells_in = (0..9).map(|i| Cell::new(String::new(), ' ', false, i, i, false)).collect();
+        let mut cells_in = (0..9)
+            .map(|i| Cell::new(String::new(), ' ', false, i, i, false, 0))
+            .collect();
         Table {
             cells: cells_in,
             full: false,
-            winning_combo : [
-                [0,1,2],
-                [3,4,5],
-                [6,7,8],
-                [0,3,6],
-                [1,4,7],
-                [2,5,8],
-                [0,4,8],
-                [2,4,6],
+            winning_combo: [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
             ],
             play_count: 0,
+            winner: String::new(),
         }
     }
-    fn get_relevant_list (&self, index : i32 ) -> Vec<[usize;3]>{
+    fn get_relevant_list(&self, index: i32) -> Vec<[usize; 3]> {
         let mut relevant_list = Vec::new();
-        for combo in self.winning_combo.iter(){
-            if combo.contains(&(index as usize)){
+        for combo in self.winning_combo.iter() {
+            if combo.contains(&(index as usize)) {
                 relevant_list.push(*combo);
             }
         }
         relevant_list
     }
-    fn check_winner(&mut self, player: &Player , index : i32) -> bool {
+    fn check_winner(&mut self, player: &Player, index: i32) -> bool {
         for combo in self.get_relevant_list(index) {
             let mut count = 0;
             for cell in combo.iter() {
@@ -98,11 +113,11 @@ impl Table{
         }
         false
     }
-    pub fn init (&mut self){
+    pub fn init(&mut self) {
         let mut count = 0;
         let mut position = 7;
         let mut row_count = 0;
-        for cell in self.cells.iter_mut(){
+        for cell in self.cells.iter_mut() {
             cell.owner = String::new();
             cell.symbol = count.to_string().chars().next().unwrap();
             cell.is_occupied = false;
@@ -118,69 +133,107 @@ impl Table{
             }
         }
     }
-    pub fn get_cell (&self, index: i32) -> &Cell {
+    pub fn get_cell(&self, index: i32) -> &Cell {
         &self.cells[index as usize]
     }
-    
-    pub fn print (&self){
+
+    pub fn print(&self) {
         if cfg!(target_os = "windows") {
             std::process::Command::new("cmd")
                 .args(&["/C", "cls"])
                 .status()
                 .unwrap();
         } else {
-            std::process::Command::new("clear")
-                .status()
-                .unwrap();
+            std::process::Command::new("clear").status().unwrap();
         }
-        println!("{} | {} | {}", self.cells[0].symbol, self.cells[1].symbol, self.cells[2].symbol);
+        println!(
+            "{} | {} | {}",
+            self.symbol_or_position(0),
+            self.symbol_or_position(1),
+            self.symbol_or_position(2)
+        );
         println!("---------");
-        println!("{} | {} | {}", self.cells[3].symbol, self.cells[4].symbol, self.cells[5].symbol);
+        println!(
+            "{} | {} | {}",
+            self.symbol_or_position(3),
+            self.symbol_or_position(4),
+            self.symbol_or_position(5)
+        );
         println!("---------");
-        println!("{} | {} | {}", self.cells[6].symbol, self.cells[7].symbol, self.cells[8].symbol);
+        println!(
+            "{} | {} | {}",
+            self.symbol_or_position(6),
+            self.symbol_or_position(7),
+            self.symbol_or_position(8)
+        );
     }
-    pub fn play (&mut self, player: &mut Player, index: i32){
+    fn symbol_or_position(&self, index: i32) -> String {
+        if self.cells[index as usize].is_occupied {
+            return self.cells[index as usize].symbol.to_string();
+        }
+        return self.cells[index as usize].position.to_string();
+    }
+    pub fn play(&mut self, player: &mut Player, index: i32) {
         if self.cells[index as usize].is_occupied {
             println!("Cell is already occupied");
             return;
         }
-        if self.check_full(){
+        if self.check_full() {
             return;
         };
 
         self.place_cell(player, index);
-
     }
-    fn place_cell (&mut self, player: &mut Player, index: i32){
-
+    fn place_cell(&mut self, player: &mut Player, index: i32) {
         self.cells[index as usize].owner = player.name.clone();
         self.cells[index as usize].symbol = player.symbol.clone();
         self.cells[index as usize].is_occupied = true;
+        self.cells[index as usize].owner_id = if player.name == "ai" { 1 } else { -1 };
         self.print();
         self.play_count += 1;
-        if self.check_winner(player, index){
-            println!("{} wins!", player.name);
+        if self.check_winner(player, index) {
+            println!("{} wins!", player.name.clone());
+            self.winner = player.name.clone();
+            self.save_table_csv();
             self.full = true;
         };
     }
-    pub fn check_full (&mut self) -> bool{
+    pub fn check_full(&mut self) -> bool {
         if self.play_count > 8 {
             self.full = true;
         }
         self.full
     }
+    pub fn save_table_csv(&self) {
+        let mut csv = String::new();
+        csv.push_str("\n");
+        for cell in self.cells.iter() {
+            csv.push_str(&cell.owner_id.to_string());
+            csv.push_str(",");
+        }
+        csv.push_str(&self.winner);
+        //csv.pop();
+        std::fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open("table.csv")
+            .unwrap()
+            .write_all(csv.as_bytes())
+            .unwrap();
+        //std::fs::write("table.csv", csv).unwrap();
+    }
 }
 
-pub struct  Player{
+pub struct Player {
     pub name: String,
     pub symbol: char,
     pub is_ai: bool,
     pub previous_moves: Vec<i32>,
 }
 
-impl Player{
+impl Player {
     pub fn new(name: String, symbol: char) -> Player {
-        let is_ai = if name == "ai" { true } else { false };
+        let is_ai = if (name == "ai" || name == "ai_2") { true } else { false };
         Player {
             name,
             symbol,
@@ -188,13 +241,13 @@ impl Player{
             previous_moves: Vec::new(),
         }
     }
-    pub fn play(&mut self, table: &mut Table, index: i32){
-        table.play(self,position_to_index(index) );
+    pub fn play(&mut self, table: &mut Table, index: i32) {
+        table.play(self, position_to_index(index));
         self.previous_moves.push(index);
     }
 }
 
-pub fn get_int (message: &str) -> i32 {
+pub fn get_int(message: &str) -> i32 {
     loop {
         println!("{}", message);
         let mut input = String::new();
@@ -205,7 +258,7 @@ pub fn get_int (message: &str) -> i32 {
         }
     }
 }
-fn  get_string (message: &str) -> String {
+fn get_string(message: &str) -> String {
     loop {
         println!("{}", message);
         let mut input = String::new();
@@ -218,7 +271,7 @@ fn  get_string (message: &str) -> String {
         }
     }
 }
-fn get_char (message: &str) -> char {
+fn get_char(message: &str) -> char {
     loop {
         println!("{}", message);
         let mut input = String::new();
@@ -243,12 +296,16 @@ impl Game {
     pub fn new() -> Game {
         let mut tictac_board = Table::new();
         tictac_board.init();
-        let mut player1 = Player::new(
-            get_string("Enter player 1 name"), 
-            get_char("Choose symbol for player 1"),);
-        let mut player2 = Player::new(
-            get_string("Enter Player two name"), 
-            get_char("Choose symbol for player 2"),);
+        /*let  player1 = Player::new(
+            get_string("Enter player 1 name"),
+            get_char("Choose symbol for player 1"),
+        );
+        let  player2 = Player::new(
+            get_string("Enter Player two name"),
+            get_char("Choose symbol for player 2"),
+        );*/
+        let player1 = Player::new("ai".to_string(), 'X');
+        let player2 = Player::new("ai_2".to_string(), 'O');
         Game {
             tictac_board,
             player1,
@@ -257,25 +314,19 @@ impl Game {
             player2_moves: Vec::new(),
         }
     }
-    pub fn ai_play_move(&mut self)-> i32{
+    pub fn ai_play_move(&mut self) -> i32 {
         let mut rng = rand::thread_rng();
         let mut ai_move = rng.gen_range(1..10);
         while self.player1_moves.contains(&ai_move) || self.player2_moves.contains(&ai_move) {
             ai_move = rng.gen_range(1..10);
         }
         ai_move
-
     }
-    pub fn play(&mut self){
+    pub fn play(&mut self) {
         let mut iterator = 0;
+        self.tictac_board.print();
         loop {
-            let input = if (iterator == 0 && self.player1.is_ai) || (iterator == 1 && self.player2.is_ai) {
-                let ai_move = self.ai_play_move();
-                ai_move
-            } else {
-                get_int("Enter a number between 1 and 9")
-            };
-
+            let input = self.get_input();
             if iterator == 0 {
                 self.player1.play(&mut self.tictac_board, input);
                 self.player1_moves.push(input);
@@ -285,13 +336,20 @@ impl Game {
             }
 
             if self.tictac_board.check_full() {
-                    println!("It's a draw!");
-                
                 break;
             }
 
             iterator = if iterator == 0 { 1 } else { 0 };
         }
     }
+    fn get_input (&mut self)-> i32 {
+        let mut  input = 0;
+        if (self.player1.is_ai) || (self.player2.is_ai) {
+            let ai_move = self.ai_play_move();
+            input = ai_move;
+        } else {
+            input = get_int("Enter a number between 1 and 9")
+        };
+        input
+    }
 }
-
