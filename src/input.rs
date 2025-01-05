@@ -25,6 +25,21 @@ impl GameData {
         }
         self.state_of_cells_list[index]
     }
+    pub fn print_game(&self) {
+        println!("Winner: {}", self.winner);
+        println!("Player 1: {}", self.player1);
+        println!("Player 2: {}", self.player2);
+        println!("---------------------------------");
+        let mut row = 0;
+        for state in self.state_of_cells_list.iter(){
+            print!("{} | => : ", row);
+            for cell in state.iter(){
+                print!("{} ", cell);
+            }
+            println!();
+            row += 1;
+        }
+    }
 }
 
 pub struct GamesData {

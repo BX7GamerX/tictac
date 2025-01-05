@@ -18,11 +18,17 @@ fn test_game(){
         }
     }
 }
+
 fn main() {
     test_game();
     let mut game_data = input::GamesData::new(String::from("table.csv"));
     game_data.read_data();
-    game_data.print_game(4);
-
+    let mut network = him_network::HimNetwork::new();
+    let mut game_one = game_data.get_game(0);
+    game_one.print_game();
+    let round_one = game_one.get_round_State(7);
+    network.add_input_node(round_one);
+    //game_data.print_game(4);
+    network.print_input_nodes();
 }
 

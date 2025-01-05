@@ -17,17 +17,25 @@ impl HimNode {
 }
 
 pub struct HimNetwork{
-    pub nodes: HashMap<i32, HimNode>,
+    pub input_nodes: HashMap<i32, HimNode>,
+    pub output_nodes: HashMap<i32, HimNode>,
 }
 impl HimNetwork {
-    pub fn new(value_list_in: [i8;9]) -> HimNetwork {
-        let mut nodes = HashMap::new();
-        let mut count = 0;
-        for value in value_list_in.iter(){
-            let node = HimNode::new(count, *value);
-            nodes.insert(node.value, node);
-            count += 1;
-        }
-        HimNetwork { nodes }
+    pub fn new() -> HimNetwork {
+        HimNetwork { input_nodes: HashMap::new(), output_nodes: HashMap::new() }
     }
+    pub fn add_input_node(&mut self, input_list: [i8;9]) {
+        let mut index = 0;
+        for data in input_list.iter() {
+            let node = HimNode::new(index,*data);
+            self.input_nodes.insert(index as i32, node);
+            index += 1;
+        }
+    }
+    pub fn print_input_nodes(&self) {
+        for (key, value) in &self.input_nodes {
+            println!("{}: {}", key, value.value);
+        }
+    }
+
 }
