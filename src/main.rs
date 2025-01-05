@@ -19,21 +19,18 @@ fn test_game(){
     }
 }
 fn test_reading () {
-    test_game();
+    //test_game();
     let mut game_data = input::GamesData::new(String::from("table.csv"));
     game_data.read_data();
     let mut network = him_network::HimNetwork::new();
     let mut game_one = game_data.get_game(0);
-    game_one.print_game();
-    let round_one = game_one.get_round_State(7);
-    network.add_input_node(round_one);
-    //game_data.print_game(4);
-    network.print_input_nodes();
-}
+    //game_one.print_game();
+    let data = game_one.state_of_cells_list;
+    println!("Data: {:?}", data);
+
+} 
 
 fn main() {
-    let test_network = him_network::HimNetwork::new();
-    let (w1,w2,b1,b2) = test_network.init_params();
-    println!("{:?}", w1[0]);
+    test_reading();
 }
 
