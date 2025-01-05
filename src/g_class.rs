@@ -36,14 +36,14 @@ impl NeuralNetwork {
     }
 
     fn sigmoid(x: f64) -> f64 {
-        1.0 / (1.0 + E.powf(-x))
+        1.0 / (1.0 + (-x).exp())
     }
 
     fn sigmoid_derivative(x: f64) -> f64 {
         x * (1.0 - x)
     }
 
-    pub fn forward(&self, input: &Vec<f64>) -> (Vec<f64>, Vec<f64>) {
+    pub fn forward(&self, input: &[f64]) -> (Vec<f64>, Vec<f64>) {
         let hidden: Vec<f64> = self
             .weights_input_hidden
             .iter()
@@ -67,8 +67,8 @@ impl NeuralNetwork {
         (hidden, output)
     }
 
-    pub fn train(&mut self, input: &Vec<f64>, target: &Vec<f64>) {
-        let (hidden, output) = self.forward(input);
+    pub fn train(&mut self, input: &[f64], target: &[f64]) {
+        let (hidden, output) = self.forward(&input);
 
         // Calculate output errors
         let output_errors: Vec<f64> = target
@@ -89,17 +89,14 @@ impl NeuralNetwork {
             .weights_hidden_output
             .iter()
             .zip(output_deltas.iter())
-            .flat_map(|(w, od)| w.iter().map(move |wi| wi * od))
+            .map(|(w, od)| w.iter().map(move |wi| wi * od).sum())
             .collect();
 
         // Calculate hidden deltas
         let hidden_deltas: Vec<f64> = hidden_errors
-            .chunks(self.output_size)
-            .take(self.hidden_size)
-            .map(|chunk| {
-                let sum: f64 = chunk.iter().sum();
-                sum * Self::sigmoid_derivative(hidden.iter().sum())
-            })
+            .iter()
+            .zip(hidden.iter())
+            .map(|(e, h)| e * Self::sigmoid_derivative(*h))
             .collect();
 
         // Update weights_hidden_output
@@ -127,8 +124,8 @@ impl NeuralNetwork {
         }
     }
 
-    pub fn predict(&self, input: &Vec<f64>) -> Vec<f64> {
-        let (_, output) = self.forward(input);
+    pub fn predict(&self, input: &[f64]) -> Vec<f64> {
+        let (_, output) = self.forward(&input);
         output
     }
     
@@ -141,11 +138,23 @@ mod tests {
 
     #[test]
     fn test_neural_network() {
+        // Create a new neural network with 9 input nodes, 10 hidden nodes, and 9 output nodes
         let mut nn = NeuralNetwork::new(9, 10, 9, 0.1);
+        // Define the input vector with 9 elements, all set to 0.0
         let input = vec![0.0; 9];
+        // Define the target vector with 9 elements, all set to 1.0
         let target = vec![1.0; 9];
+        // Train the neural network with the input and target vectors
         nn.train(&input, &target);
+        // Predict the output using the same input vector
         let output = nn.predict(&input);
+        // Check that the output vector has 9 elements
         assert_eq!(output.len(), 9);
+        assert_eq!(output.len(), 9);
+
+        // Use other methods to avoid unused warnings
+        let _ = NeuralNetwork::sigmoid(0.5);
+        let _ = NeuralNetwork::sigmoid_derivative(0.5);
+        let _ = nn.forward(&input);
     }
 }

@@ -182,7 +182,8 @@ impl Table {
             return;
         };
 
-        self.place_cell(player, index);
+        self.place_cell(player, index.clone());
+        self.save_table_csv();
     }
     fn place_cell(&mut self, player: &mut Player, index: i32) {
         self.cells[index as usize].owner = player.name.clone();
@@ -194,7 +195,7 @@ impl Table {
         if self.check_winner(player, index) {
             println!("{} wins!", player.name.clone());
             self.winner = player.name.clone();
-            self.save_table_csv();
+            //self.save_table_csv();
             self.full = true;
         };
     }
@@ -212,7 +213,7 @@ impl Table {
             csv.push_str(",");
         }
         csv.push_str(&self.winner);
-        //csv.pop();
+
         std::fs::OpenOptions::new()
             .create(true)
             .append(true)
@@ -220,7 +221,7 @@ impl Table {
             .unwrap()
             .write_all(csv.as_bytes())
             .unwrap();
-        //std::fs::write("table.csv", csv).unwrap();
+
     }
 }
 
@@ -293,25 +294,42 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn new() -> Game {
+    pub fn new(player_type:String) -> Game {
         let mut tictac_board = Table::new();
         tictac_board.init();
-        /*let  player1 = Player::new(
-            get_string("Enter player 1 name"),
-            get_char("Choose symbol for player 1"),
-        );
-        let  player2 = Player::new(
-            get_string("Enter Player two name"),
-            get_char("Choose symbol for player 2"),
-        );*/
-        let player1 = Player::new("ai".to_string(), 'X');
-        let player2 = Player::new("ai_2".to_string(), 'O');
+        let (player1, player2) = Game::init_player(player_type);
         Game {
             tictac_board,
             player1,
             player2,
             player1_moves: Vec::new(),
             player2_moves: Vec::new(),
+        }
+    }
+    //initialize the players based oin the game type the user insrtucts
+    pub fn init_player(player_type:String)->(Player,Player){
+        if player_type == "ai_Vs_ai" {
+            let player1 = Player::new("ai".to_string(), 'X');
+            let player2 = Player::new("ai_2".to_string(), 'O');
+            (player1, player2)
+        } else if player_type == "human_Vs_human" {
+            let player1 = Player::new(
+                get_string("Enter player 1 name"),
+                get_char("Choose symbol for player 1"),
+            );
+            let player2 = Player::new(
+                get_string("Enter Player two name"),
+                get_char("Choose symbol for player 2"),
+            );
+            (player1, player2)
+        }
+        else {
+            let player1 = Player::new("ai".to_string(), get_char("Choose symbol for 'ai' :"));
+            let player2 = Player::new(
+                get_string("Enter player 2 name"),
+                get_char("Choose symbol for player 2"),
+            );
+            (player1, player2)
         }
     }
     pub fn ai_play_move(&mut self) -> i32 {
