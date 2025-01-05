@@ -182,8 +182,9 @@ impl Table {
             return;
         };
 
-        self.place_cell(player, index.clone());
-        self.save_table_csv();
+        self.place_cell(player, index.clone());//place the cell
+        self.check_full();//check if the table is fullfor the update of winner incase its a draw
+        self.save_table_csv();// save the table state to a csv file
     }
     fn place_cell(&mut self, player: &mut Player, index: i32) {
         self.cells[index as usize].owner = player.name.clone();
@@ -195,13 +196,13 @@ impl Table {
         if self.check_winner(player, index) {
             println!("{} wins!", player.name.clone());
             self.winner = player.name.clone();
-            //self.save_table_csv();
-            self.full = true;
         };
+
     }
     pub fn check_full(&mut self) -> bool {
         if self.play_count > 8 {
             self.full = true;
+            self.winner = "draw".to_string();
         }
         self.full
     }
@@ -291,6 +292,7 @@ pub struct Game {
     pub player2: Player,
     pub player1_moves: Vec<i32>,
     pub player2_moves: Vec<i32>,
+    pub game_over: bool,
 }
 
 impl Game {
@@ -304,6 +306,7 @@ impl Game {
             player2,
             player1_moves: Vec::new(),
             player2_moves: Vec::new(),
+            game_over: false,
         }
     }
     //initialize the players based oin the game type the user insrtucts
@@ -353,12 +356,18 @@ impl Game {
                 self.player2_moves.push(input);
             }
 
-            if self.tictac_board.check_full() {
+            if self.check_game_over() {
                 break;
             }
 
             iterator = if iterator == 0 { 1 } else { 0 };
         }
+    }
+    fn check_game_over(&mut self)-> bool {
+        if self.tictac_board.check_full() || self.tictac_board.winner != "" {
+            self.game_over = true;
+        }
+        self.game_over
     }
     fn get_input (&mut self)-> i32 {
         let mut  input = 0;
