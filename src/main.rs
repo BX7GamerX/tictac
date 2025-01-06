@@ -1,3 +1,5 @@
+use him_network::HimNetwork;
+
 
 mod input;
 mod output;
@@ -31,6 +33,8 @@ fn test_reading () {
 } 
 
 fn main() {
-    test_reading();
+    let mut test_network = HimNetwork::new();
+    test_network.init_params();
+    test_network.print_params();
 }
 

@@ -19,35 +19,65 @@ impl HimNode {
 pub struct HimNetwork{
     pub input_nodes: HashMap<i32, HimNode>,
     pub output_nodes: HashMap<i32, HimNode>,
-    pub w1: [[f32; 9]; 10],
-    pub w2: [[f32; 10]; 10],
-    pub b1: [f32; 10],
-    pub b2: [f32; 10],
+    pub w1: [[f32; 9]; 81],
+    pub w2: [[f32; 81]; 81],
+    pub b1: [f32; 81],
+    pub b2: [f32; 81],
 }
 impl HimNetwork {
     pub fn new() -> HimNetwork {
         HimNetwork { input_nodes: HashMap::new(), output_nodes: HashMap::new() ,
-            w1: [[0.0; 9]; 10], w2: [[0.0; 10]; 10], b1: [0.0; 10], b2: [0.0; 10] }
+            w1: [[0.0; 9]; 81], w2: [[0.0; 81]; 81], b1: [0.0; 81], b2: [0.0; 81] }
     }
     pub fn init_params(&mut self){
         const INPUT_LAYER_SIZE :i64 = 9;
-        const HIDDEN_LAYER_SIZE :i64 = 10;
-        self.w1 = [[3.14159; 9]; 10] ;// W1 (10,9) => 10 hidden nodes, 9 input nodes
-        self.w2 = [[3.14159; 10]; 10];// W2 (10,10) ==> 10 hidden nodes, 10 hidden nodes
-        self.b1 = [3.14159; 10];// B1 (10,1) ==> 10 hidden nodes
-        self.b2 = [3.14159; 10];// B2 (10,1) ==> 10 hidden nodes
+        const HIDDEN_LAYER_SIZE :i64 = 81;
+        self.w1 = [[3.14159; INPUT_LAYER_SIZE as usize]; HIDDEN_LAYER_SIZE as usize] ;// W1 (10,9) => 10 hidden nodes, 9 input nodes
+        self.w2 = [[3.14159; HIDDEN_LAYER_SIZE as usize]; HIDDEN_LAYER_SIZE as usize];// W2 (10,10) ==> 10 hidden nodes, 10 hidden nodes
+        self.b1 = [3.14159; HIDDEN_LAYER_SIZE as usize];// B1 (10,1) ==> 10 hidden nodes
+        self.b2 = [3.14159; HIDDEN_LAYER_SIZE as usize];// B2 (10,1) ==> 10 hidden nodes
         // Initialize the weights and biases
-        for layers in 0 .. HIDDEN_LAYER_SIZE {
-            for inputs in 0 .. INPUT_LAYER_SIZE {
-                self.w1[layers as usize][inputs as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+        for nodes in 0 .. HIDDEN_LAYER_SIZE {
+            for connections in 0 .. INPUT_LAYER_SIZE {
+                self.w1[nodes as usize][connections as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             }
-            for inputs in 0.. HIDDEN_LAYER_SIZE {
-                self.w2[layers as usize][inputs as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            for connections in 0.. HIDDEN_LAYER_SIZE {
+                self.w2[nodes as usize][connections as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             }// Initialize the biases
-            self.b1[layers as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
-            self.b2[layers as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            self.b1[nodes as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            self.b2[nodes as usize] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     pub fn forward_propagation (&mut self,moves_count: Vec <[i8;9]>) {
         //let mut z1 = self.w1 * 
     }
