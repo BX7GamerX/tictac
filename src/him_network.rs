@@ -4,48 +4,45 @@ use rand::Rng;
 
 pub struct HimNetwork {
     //  layer : connections : nodes
-    pub w1: Vec<Vec<f32>>,
-    pub w2: Vec<Vec<f32>>,
-    pub w3: Vec<Vec<f32>>,
-    pub w4: Vec<Vec<f32>>,
+    //weights
+    //The weights are stored in 3D arrays
+    //The first dimension represents the layer
+    //The second dimension represents the connections
+    //The third dimension represents the nodes
+    pub w: Vec<Vec<Vec<f32>>>,
+    
     
     pub x1: Vec<Vec<f32>>, // 10000 games
+    //biases
+    //The biases are stored in 2D arrays
+    //The first dimension represents the layer
+    //The second dimension represents the nodes
+    pub b: Vec<Vec<f32>>,
 
-    pub b1: Vec<f32>,
-    pub b2: Vec<f32>,
-    pub b3: Vec<f32>,
-    pub b4: Vec<f32>,
 
-    pub z1: Vec<Vec<f32>>,
-    pub a1: Vec<Vec<f32>>,
-    pub z2: Vec<Vec<f32>>,
-    pub a2: Vec<Vec<f32>>,
-    pub z3: Vec<Vec<f32>>,
-    pub a3: Vec<Vec<f32>>,
-    pub z4: Vec<Vec<f32>>,
-    pub a4: Vec<Vec<f32>>,
+    
+    //forawrd propagation parameters
+    pub z : Vec<Vec<Vec<f32>>>,
+    pub a : Vec<Vec<Vec<f32>>>,
+
+
+    pub dW: Vec<Vec<Vec<f32>>>,
+    pub db: Vec<Vec<f32>>,
+
 }
 
 impl HimNetwork {
     pub fn new() -> HimNetwork {
         HimNetwork {
-            w1: vec![vec![0.0; 9]; 81],
-            w2: vec![vec![0.0; 81]; 81],
-            w3: vec![vec![0.0; 81]; 81],
-            w4: vec![vec![0.0; 81]; 9],
-            b1: vec![0.0; 81],
-            b2: vec![0.0; 81],
-            b3: vec![0.0; 81],
-            b4: vec![0.0; 9],
+
             x1: vec![vec![0.0; 9]; 10000],
-            z1: vec![vec![0.0; 9]; 10000],
-            a1: vec![vec![0.0; 9]; 10000],
-            z2: vec![vec![0.0; 81]; 10000],
-            a2: vec![vec![0.0; 81]; 10000],
-            z3: vec![vec![0.0; 81]; 10000],
-            a3: vec![vec![0.0; 81]; 10000],
-            z4: vec![vec![0.0; 9]; 10000],
-            a4: vec![vec![0.0; 9]; 10000],
+            w: vec![vec![vec![0.0; 9]; 81]; 4],
+            b: vec![vec![0.0; 81]; 4],
+            z: vec![vec![vec![0.0; 9]; 81]; 4],
+            a: vec![vec![vec![0.0; 9]; 81]; 4],
+            dW: vec![vec![vec![0.0; 9]; 81]; 4],
+            db: vec![vec![0.0; 81]; 4],
+
         }
     }
     //Initialize the weights and biases
@@ -59,16 +56,16 @@ impl HimNetwork {
         const NODES_COUNT: usize = 81;
         // Initialize the weights and biases
         for nodes in 0..NODES_COUNT {
-            self.w1[nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; CONNECTIONS_COUNT];
-            self.w2[nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
-            self.w3[nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
-            self.b1[nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
-            self.b2[nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
-            self.b3[nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            self.w[1][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; CONNECTIONS_COUNT];
+            self.w[2][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
+            self.w[3][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
+            self.b[1][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            self.b[2][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            self.b[3][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
 
             if nodes % 9 == 0 {
-                self.w4[nodes / 9] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
-                self.b4[nodes / 9] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+                self.w[4][nodes / 9] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
+                self.b[4][nodes / 9] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             }
         }
     }
@@ -76,18 +73,17 @@ impl HimNetwork {
     //Forward propagation
     pub fn forward_propagation(&mut self) {
         //First layer
-        self.z1 = self.ddd_matrix(self.multiply_matrix(&self.w1, &self.x1), &self.b1);
-        self.a1 = self.ReLU(self.z1.clone());
+        self.z[1] = self.ddd_matrix(self.multiply_matrix(&self.w[1], &self.x1), &self.b[1]);
+        self.a[1] = self.ReLU(self.z[1].clone());
         //Second layer
-        self.z2 = self.ddd_matrix(self.multiply_matrix(&self.w2, &self.a1), &self.b2);
-        self.a2 = self.ReLU(self.z2.clone());
+        self.z[2] = self.ddd_matrix(self.multiply_matrix(&self.w[2], &self.a[1]), &self.b[2]);
+        self.a[2] = self.ReLU(self.z[2].clone());
         //Third layer
-        self.z3 = self.ddd_matrix(self.multiply_matrix(&self.w3, &self.a2), &self.b3);
-        self.a3 = self.ReLU(self.z3.clone());
+        self.z[3] = self.ddd_matrix(self.multiply_matrix(&self.w[3], &self.a[2]), &self.b[3]);
+        self.a[3] = self.ReLU(self.z[3].clone());
         //Fourth layer
-        self.z4 = self.ddd_matrix(self.multiply_matrix(&self.w4, &self.a3), &self.b4);
-        self.a4 = self.softmax(&self.z4);
-        
+        self.z[4] = self.ddd_matrix(self.multiply_matrix(&self.w[4], &self.a[3]), &self.b[4]);
+        self.a[4] = self.softmax(&self.z[4]);
     }
     //One hot encode function
     //converts the class labels to one hot encoded vectors
@@ -139,13 +135,13 @@ impl HimNetwork {
         let reciprocal_m = 1.0 / m as f32;
 
         // Gradient for output layer
-        let mut dZ4 = vec![vec![0.0; self.a4[0].len()]; self.a4.len()];
-        for i in 0..self.a4.len() {
-            for j in 0..self.a4[i].len() {
-                dZ4[i][j] = self.a4[i][j] - one_hot_y[i][j];
+        let mut dZ4 = vec![vec![0.0; self.a[4][0].len()]; self.a[4].len()];
+        for i in 0..self.a[4].len() {
+            for j in 0..self.a[4][i].len() {
+                dZ4[i][j] = self.a[4][i][j] - one_hot_y[i][j];
             }
         }
-        let a3_t = self.transpose(self.a3.clone());
+        let a3_t = self.transpose(self.a[3].clone());
         let dZ4_a3_t = self.multiply_matrix(&dZ4, &a3_t);
         let dW4: Vec<Vec<f32>> = dZ4_a3_t
             .iter()
@@ -154,35 +150,64 @@ impl HimNetwork {
         let db4 = self.sum_rows(&dZ4, reciprocal_m);
 
         // Gradient for third layer
-        let w4_t = self.transpose(self.w4.clone());
+        let w4_t = self.transpose(self.w[4].clone());
         let dA3 = self.multiply_matrix(&w4_t, &dZ4);
-        let dZ3 = self.elementwise_multiply(&dA3, &self.relu_deriv(&self.z3));
-        let a2_t = self.transpose(self.a2.clone());
+        let dZ3 = self.elementwise_multiply(&dA3, &self.relu_deriv(&self.z[3]));
+        let a2_t = self.transpose(self.a[2].clone());
         let dZ3_a2_t = self.multiply_matrix(&dZ3, &a2_t);
         let dW3 = self.scale_matrix(dZ3_a2_t, reciprocal_m);
         let db3 = self.sum_rows(&dZ3, reciprocal_m);
 
         // Gradient for second layer
-        let w3_t = self.transpose(self.w3.clone());
+        let w3_t = self.transpose(self.w[3].clone());
         let dA2 = self.multiply_matrix(&w3_t, &dZ3);
-        let dZ2 = self.elementwise_multiply(&dA2, &self.relu_deriv(&self.z2));
-        let a1_t = self.transpose(self.a1.clone());
+        let dZ2 = self.elementwise_multiply(&dA2, &self.relu_deriv(&self.z[2]));
+        let a1_t = self.transpose(self.a[1].clone());
         let dZ2_a1_t = self.multiply_matrix(&dZ2, &a1_t);
         let dW2 = self.scale_matrix(dZ2_a1_t, reciprocal_m);
         let db2 = self.sum_rows(&dZ2, reciprocal_m);
 
         // Gradient for first layer
-        let w2_t = self.transpose(self.w2.clone());
+        let w2_t = self.transpose(self.w[2].clone());
         let dA1 = self.multiply_matrix(&w2_t, &dZ2);
-        let dZ1 = self.elementwise_multiply(&dA1, &self.relu_deriv(&self.z1));
+        let dZ1 = self.elementwise_multiply(&dA1, &self.relu_deriv(&self.z[1]));
         let x_t = self.transpose(self.x1.clone());
         let dZ1_x_t = self.multiply_matrix(&dZ1, &x_t);
         let dW1 = self.scale_matrix(dZ1_x_t, reciprocal_m);
         let db1 = self.sum_rows(&dZ1, reciprocal_m);
 
-        // ...apply updates or store gradients...
+        self.dW  = vec![dW1, dW2, dW3, dW4];
+        self.db = vec![db1, db2, db3, db4];
     }
 
+    /*def update_params(W1, b1, W2, b2, W3, b3, W4, b4, 
+                  dW1, db1, dW2, db2, dW3, db3, dW4, db4, alpha):
+    # Update for Layer 1
+    W1 = W1 - alpha * dW1
+    b1 = b1 - alpha * db1
+
+    # Update for Layer 2
+    W2 = W2 - alpha * dW2
+    b2 = b2 - alpha * db2
+
+    # Update for Layer 3
+    W3 = W3 - alpha * dW3
+    b3 = b3 - alpha * db3
+
+    # Update for Layer 4 (Output Layer)
+    W4 = W4 - alpha * dW4
+    b4 = b4 - alpha * db4
+
+    return W1, b1, W2, b2, W3, b3, W4, b4
+ */
+    pub fn update_params(&mut self, learning_rate: i64){
+        //updater for layer 1
+        for i in 0..4 {
+            self.w[i] = self.subtract( self.w[i], self.multiply(self.dW[i], learning_rate));
+            self.b[i] = self.subtract( self.b[i], self.multiply(self.db[i], learning_rate));
+        }
+    
+    }
     pub fn transpose(&mut self,matrix: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
         if matrix.is_empty() || matrix[0].is_empty() {
             return vec![];
@@ -258,14 +283,8 @@ impl HimNetwork {
     }
 
     pub fn print_params(&self){
-        println!("w1: {:?}", self.w1);
-        println!("w2: {:?}", self.w2);
-        println!("w3: {:?}", self.w3);
-        println!("w4: {:?}", self.w4);
-        println!("b1: {:?}", self.b1);
-        println!("b2: {:?}", self.b2);
-        println!("b3: {:?}", self.b3);
-        println!("b4: {:?}", self.b4);
+        println!("Weights: {:?}", self.w);
+        println!("Biases: {:?}", self.b);
     }
 
     pub fn elementwise_multiply(

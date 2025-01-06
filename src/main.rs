@@ -37,6 +37,6 @@ fn test_reading () {
 fn main() {
     let mut test_network = HimNetwork::new();
     test_network.init_params();
-    println!("Params: {:?}", test_network.w1[80]);
+    println!("Params: {:?}", test_network.w[1][80]);
 }
 
