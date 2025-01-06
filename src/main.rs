@@ -1,3 +1,5 @@
+use std::num::ParseIntError;
+
 use him_network::HimNetwork;
 
 
@@ -35,6 +37,6 @@ fn test_reading () {
 fn main() {
     let mut test_network = HimNetwork::new();
     test_network.init_params();
-    test_network.print_params();
+    println!("Params: {:?}", test_network.w1[80]);
 }
 
