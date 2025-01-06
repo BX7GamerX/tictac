@@ -133,10 +133,11 @@ impl HimNetwork {
     db1 = 1 / m * np.sum(dZ1, axis=1, keepdims=True)
     
     */
-    pub fn backward_propagation(&mut self, y: Vec<usize>, ) {
+    pub fn backward_propagation(&mut self, y: Vec<usize>) {
         let one_hot_y = self.one_hot_encode(y, 9);
         let m = 10000;
-        let num_classes = 9;
+        let reciprocal_m = 1.0 / m as f32;
+
         // Gradient for output layer
         let mut dZ4 = vec![vec![0.0; self.a4[0].len()]; self.a4.len()];
         for i in 0..self.a4.len() {
@@ -145,8 +146,43 @@ impl HimNetwork {
             }
         }
         let a3_t = self.transpose(self.a3.clone());
-        let dW4 = self.multiply_matrix(&dZ4, &a3_t);
+        let dZ4_a3_t = self.multiply_matrix(&dZ4, &a3_t);
+        let dW4: Vec<Vec<f32>> = dZ4_a3_t
+            .iter()
+            .map(|row| row.iter().map(|val| val * reciprocal_m).collect())
+            .collect();
+        let db4 = self.sum_rows(&dZ4, reciprocal_m);
+
+        // Gradient for third layer
+        let w4_t = self.transpose(self.w4.clone());
+        let dA3 = self.multiply_matrix(&w4_t, &dZ4);
+        let dZ3 = self.elementwise_multiply(&dA3, &self.relu_deriv(&self.z3));
+        let a2_t = self.transpose(self.a2.clone());
+        let dZ3_a2_t = self.multiply_matrix(&dZ3, &a2_t);
+        let dW3 = self.scale_matrix(dZ3_a2_t, reciprocal_m);
+        let db3 = self.sum_rows(&dZ3, reciprocal_m);
+
+        // Gradient for second layer
+        let w3_t = self.transpose(self.w3.clone());
+        let dA2 = self.multiply_matrix(&w3_t, &dZ3);
+        let dZ2 = self.elementwise_multiply(&dA2, &self.relu_deriv(&self.z2));
+        let a1_t = self.transpose(self.a1.clone());
+        let dZ2_a1_t = self.multiply_matrix(&dZ2, &a1_t);
+        let dW2 = self.scale_matrix(dZ2_a1_t, reciprocal_m);
+        let db2 = self.sum_rows(&dZ2, reciprocal_m);
+
+        // Gradient for first layer
+        let w2_t = self.transpose(self.w2.clone());
+        let dA1 = self.multiply_matrix(&w2_t, &dZ2);
+        let dZ1 = self.elementwise_multiply(&dA1, &self.relu_deriv(&self.z1));
+        let x_t = self.transpose(self.x1.clone());
+        let dZ1_x_t = self.multiply_matrix(&dZ1, &x_t);
+        let dW1 = self.scale_matrix(dZ1_x_t, reciprocal_m);
+        let db1 = self.sum_rows(&dZ1, reciprocal_m);
+
+        // ...apply updates or store gradients...
     }
+
     pub fn transpose(&mut self,matrix: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
         if matrix.is_empty() || matrix[0].is_empty() {
             return vec![];
@@ -231,5 +267,61 @@ impl HimNetwork {
         println!("b3: {:?}", self.b3);
         println!("b4: {:?}", self.b4);
     }
-    
+
+    pub fn elementwise_multiply(
+        &self,
+        a: &Vec<Vec<f32>>,
+        b: &Vec<Vec<f32>>
+    ) -> Vec<Vec<f32>> {
+        let rows = a.len();
+        let cols = a[0].len();
+        let mut result = vec![vec![0.0; cols]; rows];
+        for i in 0..rows {
+            for j in 0..cols {
+                result[i][j] = a[i][j] * b[i][j];
+            }
+        }
+        result
     }
+
+    pub fn sum_rows(&self, matrix: &Vec<Vec<f32>>, scale: f32) -> Vec<f32> {
+        let rows = matrix.len();
+        let cols = matrix[0].len();
+        let mut result = vec![0.0; rows];
+        for i in 0..rows {
+            let mut sum = 0.0;
+            for j in 0..cols {
+                sum += matrix[i][j];
+            }
+            result[i] = sum * scale;
+        }
+        result
+    }
+
+    pub fn scale_matrix(&self, matrix: Vec<Vec<f32>>, scalar: f32) -> Vec<Vec<f32>> {
+        let mut result = matrix.clone();
+        for row in result.iter_mut() {
+            for val in row.iter_mut() {
+                *val *= scalar;
+            }
+        }
+        result
+    }
+
+    pub fn relu_deriv(&self, z: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        let rows = z.len();
+        let cols = z[0].len();
+        let mut result = vec![vec![0.0; cols]; rows];
+        for i in 0..rows {
+            for j in 0..cols {
+                if z[i][j] > 0.0 {
+                    result[i][j] = 1.0;
+                }
+            }
+        }
+        result
+    }
+
+    
+    
+}
