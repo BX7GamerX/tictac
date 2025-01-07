@@ -1,5 +1,4 @@
 use rand::Rng;
-use std::f64::consts::E;
 
 pub struct NeuralNetwork {
     input_size: usize,

@@ -67,7 +67,7 @@ pub struct Table {
 /// Checks if the table is full (i.e., no more moves can be made).
 impl Table {
     pub fn new() -> Table {
-        let mut cells_in = (0..9)
+        let cells_in = (0..9)
             .map(|i| Cell::new(String::new(), ' ', false, i, i, false, 0))
             .collect();
         Table {
@@ -235,7 +235,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(name: String, symbol: char) -> Player {
-        let is_ai = if (name == "ai" || name == "ai_2") { true } else { false };
+        let is_ai = if name == "ai" || name == "ai_2" { true } else { false };
         Player {
             name,
             symbol,

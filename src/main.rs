@@ -1,4 +1,3 @@
-use std::num::ParseIntError;
 
 use him_network::HimNetwork;
 
@@ -26,8 +25,8 @@ fn test_reading () {
     //test_game();
     let mut game_data = input::GamesData::new(String::from("table.csv"));
     game_data.read_data();
-    let mut network = him_network::HimNetwork::new();
-    let mut game_one = game_data.get_game(0);
+    let network = him_network::HimNetwork::new();
+    let game_one = game_data.get_game(0);
     //game_one.print_game();
     let data = game_one.state_of_cells_list;
     println!("Data: {:?}", data);
