@@ -31,7 +31,7 @@ pub struct HimNetwork {
 }
 
 impl HimNetwork {
-    pub fn new(layers: usize) -> HimNetwork {
+    pub fn new() -> HimNetwork {
         HimNetwork {
 
             x1: vec![vec![0.0; 9]; 10000],
@@ -133,6 +133,7 @@ impl HimNetwork {
         // Gradient for output layer
         let mut dZ4 = vec![vec![0.0; self.a[4][0].len()]; self.a[4].len()];
         for i in 0..self.a[4].len() {
+            // Use the full length, removing the -1 to avoid skipping the last index
             for j in 0..self.a[4][i].len() {
                 dZ4[i][j] = self.a[4][i][j] - one_hot_y[i][j];
             }
