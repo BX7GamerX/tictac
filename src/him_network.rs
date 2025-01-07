@@ -25,23 +25,22 @@ pub struct HimNetwork {
     pub z : Vec<Vec<Vec<f32>>>,
     pub a : Vec<Vec<Vec<f32>>>,
 
-
     pub dW: Vec<Vec<Vec<f32>>>,
     pub db: Vec<Vec<f32>>,
 
 }
 
 impl HimNetwork {
-    pub fn new() -> HimNetwork {
+    pub fn new(layers: usize) -> HimNetwork {
         HimNetwork {
 
             x1: vec![vec![0.0; 9]; 10000],
-            w: vec![vec![vec![0.0; 9]; 81]; 4],
-            b: vec![vec![0.0; 81]; 4],
-            z: vec![vec![vec![0.0; 9]; 81]; 4],
-            a: vec![vec![vec![0.0; 9]; 81]; 4],
-            dW: vec![vec![vec![0.0; 9]; 81]; 4],
-            db: vec![vec![0.0; 81]; 4],
+            w: vec![vec![vec![0.0; 9]; 81]; 5],
+            b: vec![vec![0.0; 81]; 5],
+            z: vec![vec![vec![0.0; 9]; 81]; 5],
+            a: vec![vec![vec![0.0; 9]; 81]; 5],
+            dW: vec![vec![vec![0.0; 9]; 81]; 5],
+            db: vec![vec![0.0; 81]; 5],
 
         }
     }
@@ -59,14 +58,11 @@ impl HimNetwork {
             self.w[1][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; CONNECTIONS_COUNT];
             self.w[2][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
             self.w[3][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
+            self.w[4][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
             self.b[1][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             self.b[2][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             self.b[3][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
-
-            if nodes % 9 == 0 {
-                self.w[4][nodes / 9] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
-                self.b[4][nodes / 9] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
-            }
+            self.b[4][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
         }
     }
 
@@ -200,13 +196,39 @@ impl HimNetwork {
 
     return W1, b1, W2, b2, W3, b3, W4, b4
  */
-    pub fn update_params(&mut self, learning_rate: i64){
-        //updater for layer 1
-        for i in 0..4 {
-            self.w[i] = self.subtract( self.w[i], self.multiply(self.dW[i], learning_rate));
-            self.b[i] = self.subtract( self.b[i], self.multiply(self.db[i], learning_rate));
+    pub fn update_params(&mut self, alpha: f32) {
+        for l in 0..self.w.len() {
+            for i in 0..self.w[l].len() {
+                for j in 0..self.w[l][i].len() {
+                    self.w[l][i][j] -= alpha * self.dW[l][i][j];
+                }
+            }
+            for i in 0..self.b[l].len() {
+                self.b[l][i] -= alpha * self.db[l][i];
+            }
         }
-    
+    }
+
+    pub fn get_predictions(&self) -> Vec<usize> {
+        let mut predictions = vec![];
+        for i in 0..self.a[4].len() {
+            let mut max_val = 0.0;
+            let mut max_idx = 0;
+            for j in 0..self.a[4][i].len() {
+                if self.a[4][i][j] > max_val {
+                    max_val = self.a[4][i][j];
+                    max_idx = j;
+                }
+            }
+            predictions.push(max_idx);
+        }
+        predictions
+    }
+    pub fn gradient_descent(&mut self, y: Vec<usize>, alpha: f32, num_games: usize) {
+        self.init_params();
+        self.forward_propagation();
+        self.backward_propagation(y);
+        self.update_params(alpha);
     }
     pub fn transpose(&mut self,matrix: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
         if matrix.is_empty() || matrix[0].is_empty() {
@@ -231,17 +253,12 @@ impl HimNetwork {
     //activation function for the hidden layers
     //returns the input if it is positive, otherwise returns 0
     //this function is used to introduce non-linearity to the model
-    fn ReLU(&self, input: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
-        let mut output = input.clone();
-        for i in 0..output.len() {
-            for j in 0..output[i].len() {
-                if output[i][j] < 0.0 {
-                    output[i][j] = 0.0;
-                }
-            }
-        }
-        output
+    pub fn ReLU(&self, z: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        z.into_iter()
+            .map(|row| row.into_iter().map(|x| x.max(0.0)).collect())
+            .collect()
     }
+
     //Multiply matrix function
     //multiplies two matrices
     fn multiply_matrix(&self, weights: &Vec<Vec<f32>>, inputs: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
@@ -271,15 +288,15 @@ impl HimNetwork {
     }
     //Softmax function
     //converts the output of the last layer to probabilities
-    fn softmax(&self, input: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
-        let mut output = vec![vec![0.0; input[0].len()]; input.len()];
-        for i in 0..input.len() {
-            let sum: f32 = input[i].iter().map(|x| x.exp()).sum();
-            for j in 0..input[i].len() {
-                output[i][j] = input[i][j].exp() / sum;
-            }
-        }
-        output
+    pub fn softmax(&self, z: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        z.iter()
+            .map(|row| {
+                let max_val = row.iter().cloned().fold(f32::MIN, f32::max);
+                let exp_row: Vec<f32> = row.iter().map(|&x| (x - max_val).exp()).collect();
+                let sum_exp = exp_row.iter().sum::<f32>();
+                exp_row.into_iter().map(|x| x / sum_exp).collect()
+            })
+            .collect()
     }
 
     pub fn print_params(&self){
@@ -328,19 +345,98 @@ impl HimNetwork {
     }
 
     pub fn relu_deriv(&self, z: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
-        let rows = z.len();
-        let cols = z[0].len();
+        z.iter()
+            .map(|row| row.iter().map(|&x| if x > 0.0 { 1.0 } else { 0.0 }).collect())
+            .collect()
+    }
+
+    pub fn subtract_matrix(&self, a: &Vec<Vec<f32>>, b: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        let rows = a.len();
+        let cols = a[0].len();
         let mut result = vec![vec![0.0; cols]; rows];
         for i in 0..rows {
             for j in 0..cols {
-                if z[i][j] > 0.0 {
-                    result[i][j] = 1.0;
-                }
+                result[i][j] = a[i][j] - b[i][j];
             }
         }
         result
     }
 
-    
-    
+    pub fn multiply_scalar(&self, a: &Vec<Vec<f32>>, scalar: f32) -> Vec<Vec<f32>> {
+        let rows = a.len();
+        let cols = a[0].len();
+        let mut result = vec![vec![0.0; cols]; rows];
+        for i in 0..rows {
+            for j in 0..cols {
+                result[i][j] = a[i][j] * scalar;
+            }
+        }
+        result
+    }
+
+    pub fn multiply_scalar_vector(&self, a: &Vec<f32>, scalar: f32) -> Vec<f32> {
+        let mut result = a.clone();
+        for i in 0..a.len() {
+            result[i] *= scalar;
+        }
+        result
+    }
+
+    pub fn subtract_vector(&self, a: &Vec<f32>, b: &Vec<f32>) -> Vec<f32> {
+        let mut result = vec![0.0; a.len()];
+        for i in 0..a.len() {
+            result[i] = a[i] - b[i];
+        }
+        result
+    }
+
+    // Simple ReLU
+    pub fn relu(&self, x: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        x.into_iter()
+            .map(|row| row.into_iter().map(|v| v.max(0.0)).collect())
+            .collect()
+    }
+
+
+    // Simple cross-entropy loss
+    pub fn compute_loss(&mut self, predictions: Vec<Vec<f32>>, labels: Vec<usize>) -> f32 {
+        // Convert to one-hot
+        let one_hot_labels = self.one_hot_encode(labels, predictions[0].len());
+        let mut total_loss = 0.0;
+        for (pred_row, label_row) in predictions.iter().zip(one_hot_labels.iter()) {
+            for (&p, &l) in pred_row.iter().zip(label_row.iter()) {
+                if l > 0.0 && p > 0.0 {
+                    total_loss -= l * p.ln();
+                }
+            }
+        }
+        total_loss / (predictions.len() as f32)
+    }
+
+    // Predict class indices from final activations
+    pub fn predict(&self, output: &Vec<Vec<f32>>) -> Vec<usize> {
+        let mut preds = vec![];
+        for row in output {
+            let mut max_index = 0;
+            let mut max_val = f32::MIN;
+            for (j, &val) in row.iter().enumerate() {
+                if val > max_val {
+                    max_val = val;
+                    max_index = j;
+                }
+            }
+            preds.push(max_index);
+        }
+        preds
+    }
+
+    // Example training loop skeleton
+    pub fn train(&mut self, x: Vec<Vec<f32>>, y: Vec<usize>, epochs: usize, alpha: f32) {
+        for _ in 0..epochs {
+            // forward_prop, backward_prop, update_params, etc.
+            self.forward_propagation();
+            self.backward_propagation(y.clone());
+            self.update_params(alpha);
+        }
+    }
 }
