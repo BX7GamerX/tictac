@@ -1,4 +1,3 @@
-
 use rand::Rng;
 
 pub struct HimNetwork {
@@ -32,15 +31,50 @@ pub struct HimNetwork {
 impl HimNetwork {
     pub fn new() -> HimNetwork {
         HimNetwork {
-
             x1: vec![vec![0.0; 9]; 10000],
-            w: vec![vec![vec![0.0; 9]; 81]; 5],
-            b: vec![vec![0.0; 81]; 5],
-            z: vec![vec![vec![0.0; 9]; 81]; 5],
-            a: vec![vec![vec![0.0; 9]; 81]; 5],
-            dW: vec![vec![vec![0.0; 9]; 81]; 5],
-            db: vec![vec![0.0; 81]; 5],
-
+            w: vec![
+                vec![vec![0.0; 9]; 81],     // layer 1
+                vec![vec![0.0; 81]; 81],   // layer 2
+                vec![vec![0.0; 81]; 81],   // layer 3
+                vec![vec![0.0; 81]; 81],   // adjust if needed
+                vec![vec![0.0; 9]; 81],    // final layer => 9 outputs
+            ],
+            b: vec![
+                vec![0.0; 81], 
+                vec![0.0; 81],
+                vec![0.0; 81], 
+                vec![0.0; 81],
+                vec![0.0; 9],             // final layer => 9 biases
+            ],
+            z: vec![
+                vec![vec![0.0; 9]; 81],   
+                vec![vec![0.0; 81]; 10000], // reorder to match dims
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 9]; 10000],  // final => 9 columns
+            ],
+            a: vec![
+                // same shape as z
+                vec![vec![0.0; 9]; 81],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 9]; 10000],  // final => 9 columns
+            ],
+            dW: vec![
+                vec![vec![0.0; 9]; 81],
+                vec![vec![0.0; 81]; 81],
+                vec![vec![0.0; 81]; 81],
+                vec![vec![0.0; 81]; 81],
+                vec![vec![0.0; 9]; 81],
+            ],
+            db: vec![
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 9],
+            ],
         }
     }
     //Initialize the weights and biases
@@ -52,15 +86,20 @@ impl HimNetwork {
     pub fn init_params(&mut self) {
         const CONNECTIONS_COUNT: usize = 9;
         const NODES_COUNT: usize = 81;
-        // Initialize the weights and biases
+        // Initialize weights and biases
         for nodes in 0..NODES_COUNT {
             self.w[1][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; CONNECTIONS_COUNT];
             self.w[2][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
             self.w[3][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
-            self.w[4][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; NODES_COUNT];
+            
+            // Change final layer to 9 outputs instead of 81
+            self.w[4][nodes] = vec![rand::thread_rng().gen_range(0.0..1.0) - 0.5; 9];
+
             self.b[1][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             self.b[2][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
             self.b[3][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
+            
+            // Also reduce the final bias dimension to 9
             self.b[4][nodes] = rand::thread_rng().gen_range(0.0..1.0) - 0.5;
         }
     }
@@ -132,7 +171,6 @@ impl HimNetwork {
         // Gradient for output layer
         let mut dZ4 = vec![vec![0.0; self.a[4][0].len()]; self.a[4].len()];
         for i in 0..self.a[4].len() {
-            // Use the full length, removing the -1 to avoid skipping the last index
             for j in 0..self.a[4][i].len() {
                 dZ4[i][j] = self.a[4][i][j] - one_hot_y[i][j];
             }
