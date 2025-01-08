@@ -1,6 +1,362 @@
 use rand::Rng;
 
 pub struct HimNetwork {
+    pub w: Vec<Vec<Vec<f32>>>,   // [layer][node][connection]
+    pub x1: Vec<Vec<f32>>,       // Training examples
+    pub b: Vec<Vec<f32>>,        // [layer][node]
+    pub z: Vec<Vec<Vec<f32>>>,   // Intermediate layer outputs
+    pub a: Vec<Vec<Vec<f32>>>,   // Activations
+    pub dW: Vec<Vec<Vec<f32>>>,  // Gradients for weights
+    pub db: Vec<Vec<f32>>,       // Gradients for biases
+}
+
+impl HimNetwork {
+    pub fn new() -> HimNetwork {
+        // We use 5 layers total: input => hidden => hidden => hidden => output
+        // The final layer has 9 outputs (digits 0..8).
+        HimNetwork {
+            x1: vec![vec![0.0; 9]; 10000],
+            w: vec![
+                // Layer shapes adapted from documentation logic
+                vec![vec![0.0; 9]; 81],     // layer 1
+                vec![vec![0.0; 81]; 81],    // layer 2
+                vec![vec![0.0; 81]; 81],    // layer 3
+                vec![vec![0.0; 81]; 81],    // layer 4
+                vec![vec![0.0; 9]; 81],     // layer 5 => 9 outputs
+            ],
+            b: vec![
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 9],
+            ],
+            z: vec![
+                vec![vec![0.0; 9]; 81],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 9]; 10000],
+            ],
+            a: vec![
+                vec![vec![0.0; 9]; 81],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 81]; 10000],
+                vec![vec![0.0; 9]; 10000],
+            ],
+            dW: vec![
+                vec![vec![0.0; 9]; 81],
+                vec![vec![0.0; 81]; 81],
+                vec![vec![0.0; 81]; 81],
+                vec![vec![0.0; 81]; 81],
+                vec![vec![0.0; 9]; 81],
+            ],
+            db: vec![
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 81],
+                vec![0.0; 9],
+            ],
+        }
+    }
+
+    /// Initialize weights and biases with random values as in the documentation:
+    ///    W ~ Uniform(-0.5, 0.5), B ~ Uniform(-0.5, 0.5)
+    pub fn init_params(&mut self) {
+        let mut rng = rand::thread_rng();
+        for nodes in 0..81 {
+            self.w[1][nodes] = vec![(rng.gen_range(0.0..1.0) - 0.5); 9];
+            self.w[2][nodes] = vec![(rng.gen_range(0.0..1.0) - 0.5); 81];
+            self.w[3][nodes] = vec![(rng.gen_range(0.0..1.0) - 0.5); 81];
+            self.w[4][nodes] = vec![(rng.gen_range(0.0..1.0) - 0.5); 9];
+
+            self.b[1][nodes] = rng.gen_range(0.0..1.0) - 0.5;
+            self.b[2][nodes] = rng.gen_range(0.0..1.0) - 0.5;
+            self.b[3][nodes] = rng.gen_range(0.0..1.0) - 0.5;
+            self.b[4][nodes] = rng.gen_range(0.0..1.0) - 0.5;
+        }
+    }
+
+    /// Forward propagation (adapting the doc steps to our five-layer design).
+    /// Z[l] = W[l] * A[l-1] + B[l]
+    /// A[l] = ReLU(Z[l]) for hidden layers; softmax for final layer.
+    pub fn forward_propagation(&mut self) {
+        // Layer 1
+        self.z[1] = self.add_bias(
+            self.multiply_matrix(&self.w[1], &self.x1),
+            &self.b[1],
+        );
+        self.a[1] = self.relu(self.z[1].clone());
+
+        // Layer 2
+        self.z[2] = self.add_bias(
+            self.multiply_matrix(&self.w[2], &self.a[1]),
+            &self.b[2],
+        );
+        self.a[2] = self.relu(self.z[2].clone());
+
+        // Layer 3
+        self.z[3] = self.add_bias(
+            self.multiply_matrix(&self.w[3], &self.a[2]),
+            &self.b[3],
+        );
+        self.a[3] = self.relu(self.z[3].clone());
+
+        // Layer 4 (final NN output)
+        self.z[4] = self.add_bias(
+            self.multiply_matrix(&self.w[4], &self.a[3]),
+            &self.b[4],
+        );
+        self.a[4] = self.softmax(&self.z[4]);
+    }
+
+    /// Convert labels Y to one-hot vectors, as described in doc (size = 9).
+    pub fn one_hot_encode(&self, y: Vec<usize>, classes: usize) -> Vec<Vec<f32>> {
+        let mut encoded = vec![vec![0.0; classes]; y.len()];
+        for (i, label) in y.iter().enumerate() {
+            if *label < classes {
+                encoded[i][*label] = 1.0;
+            }
+        }
+        encoded
+    }
+
+    /// ReLU derivative
+    fn relu_deriv(&self, z: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        z.iter()
+            .map(|row| row.iter().map(|&val| if val > 0.0 { 1.0 } else { 0.0 }).collect())
+            .collect()
+    }
+
+    /// Backward propagation (based on doc math).
+    pub fn backward_propagation(&mut self, y: Vec<usize>) {
+        let one_hot_y = self.one_hot_encode(y, 9);
+        let m = self.x1.len() as f32;
+        let inv_m = 1.0 / m;
+
+        // Output layer gradient: dZ4 = A[4] - Y
+        let mut dZ4 = self.a[4].clone();
+        for i in 0..dZ4.len() {
+            for j in 0..dZ4[i].len() {
+                dZ4[i][j] -= one_hot_y[i][j];
+            }
+        }
+        // dW4 = (1/m) dZ4 * A[3]^T
+        let a3_t = self.transpose(self.a[3].clone());
+        let dZ4_a3_t = self.multiply_matrix(&dZ4, &a3_t);
+        let dW4 = self.scale_matrix(dZ4_a3_t, inv_m);
+
+        // db4 = (1/m) sum_rows(dZ4)
+        let db4 = self.sum_rows(&dZ4, inv_m);
+
+        // dZ3 = W4^T dZ4 .* ReLU'(Z3)
+        let w4_t = self.transpose(self.w[4].clone());
+        let dA3 = self.multiply_matrix(&w4_t, &dZ4);
+        let r3 = self.relu_deriv(&self.z[3]);
+        let dZ3 = self.elementwise_multiply(&dA3, &r3);
+
+        // dW3 = (1/m) dZ3 * A[2]^T, db3 = (1/m) sum_rows(dZ3)
+        let a2_t = self.transpose(self.a[2].clone());
+        let dZ3_a2_t = self.multiply_matrix(&dZ3, &a2_t);
+        let dW3 = self.scale_matrix(dZ3_a2_t, inv_m);
+        let db3 = self.sum_rows(&dZ3, inv_m);
+
+        // dZ2 = W3^T * dZ3 .* ReLU'(Z2)
+        let w3_t = self.transpose(self.w[3].clone());
+        let dA2 = self.multiply_matrix(&w3_t, &dZ3);
+        let r2 = self.relu_deriv(&self.z[2]);
+        let dZ2 = self.elementwise_multiply(&dA2, &r2);
+
+        // dW2 = (1/m) dZ2 * A[1]^T, db2 = (1/m) sum_rows(dZ2)
+        let a1_t = self.transpose(self.a[1].clone());
+        let dZ2_a1_t = self.multiply_matrix(&dZ2, &a1_t);
+        let dW2 = self.scale_matrix(dZ2_a1_t, inv_m);
+        let db2 = self.sum_rows(&dZ2, inv_m);
+
+        // dZ1 = W2^T * dZ2 .* ReLU'(Z1)
+        let w2_t = self.transpose(self.w[2].clone());
+        let dA1 = self.multiply_matrix(&w2_t, &dZ2);
+        let r1 = self.relu_deriv(&self.z[1]);
+        let dZ1 = self.elementwise_multiply(&dA1, &r1);
+
+        // dW1 = (1/m) dZ1 * X^T, db1 = (1/m) sum_rows(dZ1)
+        let x_t = self.transpose(self.x1.clone());
+        let dZ1_x_t = self.multiply_matrix(&dZ1, &x_t);
+        let dW1 = self.scale_matrix(dZ1_x_t, inv_m);
+        let db1 = self.sum_rows(&dZ1, inv_m);
+
+        // Store
+        self.dW = vec![dW1, dW2, dW3, dW4];
+        self.db = vec![db1, db2, db3, db4];
+    }
+
+    /// Update parameters (weights/biases).
+    /// W := W - alpha * dW
+    /// B := B - alpha * dB
+    pub fn update_params(&mut self, alpha: f32) {
+        for l in 0..self.w.len() {
+            for i in 0..self.w[l].len() {
+                for j in 0..self.w[l][i].len() {
+                    self.w[l][i][j] -= alpha * self.dW[l][i][j];
+                }
+            }
+            for i in 0..self.b[l].len() {
+                self.b[l][i] -= alpha * self.db[l][i];
+            }
+        }
+    }
+
+    /// Minimally, half-done training approach
+    pub fn gradient_descent(&mut self, y: Vec<usize>, alpha: f32) {
+        self.init_params();
+        self.forward_propagation();
+        self.backward_propagation(y);
+        self.update_params(alpha);
+    }
+
+    /// Multiply two matrices (inputs: W, X).
+    fn multiply_matrix(&self, w: &Vec<Vec<f32>>, x: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        // result shape: x.len() x w.len()
+        let mut result = vec![vec![0.0; w.len()]; x.len()];
+        for i in 0..x.len() {
+            for j in 0..w.len() {
+                let mut sum = 0.0;
+                for k in 0..w[j].len() {
+                    sum += w[j][k] * x[i][k];
+                }
+                result[i][j] = sum;
+            }
+        }
+        result
+    }
+
+    /// Add bias to each row of a matrix
+    fn add_bias(&self, mat: Vec<Vec<f32>>, bias: &Vec<f32>) -> Vec<Vec<f32>> {
+        let mut out = mat.clone();
+        for i in 0..out.len() {
+            for j in 0..out[i].len() {
+                out[i][j] += bias[j];
+            }
+        }
+        out
+    }
+
+    /// ReLU activation
+    fn relu(&self, z: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        z.into_iter()
+            .map(|row| {
+                row.into_iter()
+                    .map(|val| if val > 0.0 { val } else { 0.0 })
+                    .collect()
+            })
+            .collect()
+    }
+
+    /// Softmax as in the doc.
+    pub fn softmax(&self, z: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        let mut out = vec![vec![0.0; z[0].len()]; z.len()];
+        for (i, row) in z.iter().enumerate() {
+            let max_val = row.iter().cloned().fold(f32::MIN, f32::max);
+            let exps: Vec<f32> = row.iter().map(|&v| (v - max_val).exp()).collect();
+            let sum_exps: f32 = exps.iter().sum();
+            for (j, &e) in exps.iter().enumerate() {
+                out[i][j] = e / sum_exps;
+            }
+        }
+        out
+    }
+
+    /// Elementwise multiply for matrix
+    fn elementwise_multiply(&self, a: &Vec<Vec<f32>>, b: &Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        let mut r = vec![vec![0.0; a[0].len()]; a.len()];
+        for i in 0..a.len() {
+            for j in 0..a[i].len() {
+                r[i][j] = a[i][j] * b[i][j];
+            }
+        }
+        r
+    }
+
+    /// Summation across each row, scaled by factor
+    fn sum_rows(&self, matrix: &Vec<Vec<f32>>, factor: f32) -> Vec<f32> {
+        let mut sums = vec![0.0; matrix.len()];
+        for (i, row) in matrix.iter().enumerate() {
+            let sum_row: f32 = row.iter().sum();
+            sums[i] = sum_row * factor;
+        }
+        sums
+    }
+
+    /// Multiply each element of a matrix by scalar
+    fn scale_matrix(&self, mat: Vec<Vec<f32>>, scalar: f32) -> Vec<Vec<f32>> {
+        let mut out = mat.clone();
+        for row in out.iter_mut() {
+            for val in row.iter_mut() {
+                *val *= scalar;
+            }
+        }
+        out
+    }
+
+    /// Transpose a matrix
+    pub fn transpose(&self, m: Vec<Vec<f32>>) -> Vec<Vec<f32>> {
+        if m.is_empty() || m[0].is_empty() {
+            return vec![];
+        }
+        let rows = m.len();
+        let cols = m[0].len();
+        let mut out = vec![vec![0.0; rows]; cols];
+        for i in 0..rows {
+            for j in 0..cols {
+                out[j][i] = m[i][j];
+            }
+        }
+        out
+    }
+
+    /// Simple cross-entropy loss
+    pub fn compute_loss(&mut self, preds: Vec<Vec<f32>>, labels: Vec<usize>) -> f32 {
+        let oh_labels = self.one_hot_encode(labels, preds[0].len());
+        let mut total = 0.0;
+        for (i, row) in preds.iter().enumerate() {
+            for j in 0..row.len() {
+                let p = row[j].max(1e-12); // avoid log(0)
+                total -= oh_labels[i][j] * p.ln();
+            }
+        }
+        total / (preds.len() as f32)
+    }
+
+    /// Get final predictions
+    pub fn predict(&self, output: &Vec<Vec<f32>>) -> Vec<usize> {
+        let mut res = vec![0; output.len()];
+        for (i, row) in output.iter().enumerate() {
+            let mut max_val = row[0];
+            let mut max_idx = 0;
+            for (j, &v) in row.iter().enumerate() {
+                if v > max_val {
+                    max_val = v;
+                    max_idx = j;
+                }
+            }
+            res[i] = max_idx;
+        }
+        res
+    }
+
+    /// Print parameters for debugging
+    pub fn print_params(&self) {
+        println!("Weights: {:?}", self.w);
+        println!("Biases: {:?}", self.b);
+    }
+}
+
+
+/*use rand::Rng;
+
+pub struct HimNetwork {
     //  layer : connections : nodes
     //weights
     //The weights are stored in 3D arrays
@@ -477,4 +833,4 @@ impl HimNetwork {
             self.update_params(alpha);
         }
     }
-}
+}*/
