@@ -272,39 +272,182 @@ class GameHistoryViewer:
         for widget in self.games_list_frame.winfo_children():
             widget.destroy()
         
-        # Add a loading indicator
-        loading_label = ctk.CTkLabel(
+        # Create enhanced loading screen
+        loading_frame = ctk.CTkFrame(
             self.games_list_frame,
-            text="Loading games...",
+            fg_color="#333333",
+            corner_radius=10
+        )
+        loading_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        
+        loading_title = ctk.CTkLabel(
+            loading_frame,
+            text="Loading Game History",
+            font=ctk.CTkFont(size=18, weight="bold"),
+            text_color="#3E92CC"
+        )
+        loading_title.pack(pady=(20, 10))
+        
+        # Add a more descriptive status message
+        self.loading_status = ctk.CTkLabel(
+            loading_frame,
+            text="Initializing data loader...",
             font=ctk.CTkFont(size=14),
             text_color="#CCCCCC"
         )
-        loading_label.pack(pady=10)
-        self.window.update_idletasks()  # Force UI update to show loading message
+        self.loading_status.pack(pady=5)
         
+        # Add a progress bar
+        self.loading_progress = ctk.CTkProgressBar(
+            loading_frame,
+            width=300,
+            height=15,
+            corner_radius=5,
+            mode="indeterminate"
+        )
+        self.loading_progress.pack(pady=15)
+        self.loading_progress.start()
+        
+        # Add stats display that will update during loading
+        self.loading_stats = ctk.CTkLabel(
+            loading_frame,
+            text="Games: 0 | X Wins: 0 | O Wins: 0 | Draws: 0",
+            font=ctk.CTkFont(size=12),
+            text_color="#AAAAAA"
+        )
+        self.loading_stats.pack(pady=5)
+        
+        # Add cancel button for long-running operations
+        cancel_btn = ctk.CTkButton(
+            loading_frame,
+            text="Cancel",
+            command=self.cancel_loading,
+            font=ctk.CTkFont(size=13),
+            fg_color="#E63946",
+            hover_color="#C5313E",
+            width=120,
+            height=32
+        )
+        cancel_btn.pack(pady=15)
+        
+        # Force UI update to show loading screen
+        self.window.update_idletasks()
+        
+        # Initialize loading state
+        self.is_loading = True
+        self.cancel_loading_requested = False
+        
+        # Start loading in a separate thread to keep UI responsive
+        import threading
+        self.loading_thread = threading.Thread(target=self._load_games_async)
+        self.loading_thread.daemon = True
+        self.loading_thread.start()
+        
+        # Start checking for completion
+        self.window.after(100, self._check_loading_complete)
+
+    def _load_games_async(self):
+        """Load game data in background thread"""
         try:
-            # Load game data with verbose debugging
-            print("Beginning game history load...")
-            csv_path = os.path.join(os.path.dirname(__file__), "game_data", TicTacToeGame.GAME_DATA_FILE)
-            if not os.path.exists(csv_path):
-                print(f"CSV file not found at: {csv_path}")
-                loading_label.destroy()
-                no_games_label = ctk.CTkLabel(
-                    self.games_list_frame,
-                    text="No games found - CSV file missing",
-                    font=ctk.CTkFont(size=14),
-                    text_color="#E63946"
-                )
-                no_games_label.pack(pady=10)
+            # Update status via the main thread
+            self.window.after(0, lambda: self.loading_status.configure(text="Connecting to data store..."))
+            
+            # Attempt to use optimized data loading
+            try:
+                from game_data_integration import GameDataIntegration
+                
+                # Create data manager with progress callback
+                self.window.after(0, lambda: self.loading_status.configure(text="Initializing data processor..."))
+                
+                # Progress update function that safely updates UI from background thread
+                def update_progress(stage, progress=None, stats=None):
+                    if self.cancel_loading_requested:
+                        return False  # Signal to stop loading
+                    
+                    # Update UI in main thread
+                    self.window.after(0, lambda: self.loading_status.configure(text=stage))
+                    
+                    # Update progress bar if value provided
+                    if progress is not None:
+                        if progress < 0:  # Indeterminate
+                            self.window.after(0, self.loading_progress.start)
+                        else:
+                            self.window.after(0, lambda: self.loading_progress.stop())
+                            self.window.after(0, lambda: self.loading_progress.set(progress))
+                    
+                    # Update stats if provided
+                    if stats:
+                        stats_text = f"Games: {stats.get('total_games', 0)} | "
+                        stats_text += f"X Wins: {stats.get('wins_player1', 0)} | "
+                        stats_text += f"O Wins: {stats.get('wins_player2', 0)} | "
+                        stats_text += f"Draws: {stats.get('draws', 0)}"
+                        self.window.after(0, lambda: self.loading_stats.configure(text=stats_text))
+                    
+                    return True  # Continue loading
+                
+                # Create data integration with progress reporting
+                data_manager = GameDataIntegration(use_cache=True, progress_callback=update_progress)
+                
+                # Set loading progress to determinate mode once structure is loaded
+                self.window.after(0, lambda: self.loading_progress.stop())
+                self.window.after(0, lambda: self.loading_progress.configure(mode="determinate"))
+                self.window.after(0, lambda: self.loading_progress.set(0.25))
+                
+                # Get the games
+                self.games = data_manager.get_all_games()
+                self.window.after(0, lambda: self.loading_progress.set(0.75))
+                
+                # Store data manager for potential further use
+                self.data_manager = data_manager
+                
+                # Update final stats
+                stats = data_manager.get_statistics()
+                update_progress("Data processing complete", 1.0, stats)
+                
+            except ImportError:
+                # Fall back to regular loading
+                self.window.after(0, lambda: self.loading_status.configure(
+                    text="Optimized data loader unavailable, using standard loading..."
+                ))
+                self.games = self.load_games_standard()
+                
+            # Loading complete
+            self.is_loading = False
+            
+        except Exception as e:
+            print(f"Error in background loading: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            # Update UI with error
+            self.window.after(0, lambda: self.loading_status.configure(
+                text=f"Error loading data: {str(e)}",
+                text_color="#E63946"
+            ))
+            
+            # Stop progress animation
+            self.window.after(0, self.loading_progress.stop)
+            
+            # Flag as no longer loading
+            self.is_loading = False
+
+    def _check_loading_complete(self):
+        """Check if background loading is complete and update UI if so"""
+        if not self.is_loading:
+            # Loading complete, update UI
+            if self.cancel_loading_requested:
+                # Don't update UI if loading was canceled
+                self.cancel_loading_requested = False
                 return
             
-            print(f"CSV file found at: {csv_path}")
-            self.games = TicTacToeGame.load_game_history_from_csv()
-            print(f"Loaded games count: {len(self.games)}")
+            # Stop progress bar
+            self.loading_progress.stop()
             
-            # Remove loading indicator
-            loading_label.destroy()
+            # Clear loading screen
+            for widget in self.games_list_frame.winfo_children():
+                widget.destroy()
             
+            # Finalize UI setup with loaded data
             if not self.games:
                 no_games_label = ctk.CTkLabel(
                     self.games_list_frame,
@@ -315,128 +458,73 @@ class GameHistoryViewer:
                 no_games_label.pack(pady=10)
                 return
             
-            # Sort game IDs by timestamp (assuming game_id format is datetime-based)
-            # Handle potentially malformed IDs gracefully
-            def get_game_timestamp(game_id):
-                try:
-                    # Try to parse as numeric timestamp
-                    if isinstance(game_id, str) and len(game_id) >= 8:
-                        # Extract date part for sorting
-                        return game_id[:8] + (game_id[9:15] if len(game_id) > 9 else "")
-                    return "0"  # Default for malformed IDs
-                except Exception:
-                    return "0"  # Default for any parsing errors
+            # Sort game IDs chronologically
+            game_ids = sorted(
+                self.games.keys(), 
+                key=lambda gid: self.games[gid].get('timestamp', gid),
+                reverse=True
+            )
             
-            game_ids = sorted(self.games.keys(), 
-                             key=get_game_timestamp,
-                             reverse=True)
+            # Add filter UI
+            self.add_filter_controls()
             
-            print(f"Sorted game IDs: {len(game_ids)}")
+            # Populate with filtered list (using pagination)
+            self.current_page = 0
+            self.page_size = 20  # Number of games per page
+            self.populate_games_list(game_ids, True)
             
-            # Debug any empty games
-            empty_games = [gid for gid in game_ids if not self.games[gid].get('moves')]
-            if empty_games:
-                print(f"Warning: Found {len(empty_games)} games with no moves")
+        else:
+            # Still loading, check again after a delay
+            self.window.after(100, self._check_loading_complete)
+
+    def cancel_loading(self):
+        """Cancel the current loading operation"""
+        if self.is_loading:
+            self.cancel_loading_requested = True
+            self.loading_status.configure(text="Canceling...")
             
-            for game_id in game_ids:
-                game = self.games[game_id]
-                
-                # Skip games with no moves
-                if not game.get('moves'):
-                    print(f"Skipping game with no moves: {game_id}")
-                    continue
-                    
-                # Format date from game_id
-                try:
-                    date_str = f"{game_id[:4]}-{game_id[4:6]}-{game_id[6:8]}"
-                    time_str = f"{game_id[9:11]}:{game_id[11:13]}:{game_id[13:15]}"
-                    date_display = f"{date_str} {time_str}"
-                except Exception as e:
-                    print(f"Error formatting date for game {game_id}: {e}")
-                    date_display = game_id
-                
-                # Get winner info
-                winner = game.get('winner')
-                moves_count = len(game.get('moves', []))
-                
-                if winner in [1, 2]:
-                    winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})"
-                elif winner == 0:
-                    winner_text = "Draw"
-                else:
-                    winner_text = "Incomplete" if moves_count > 0 else "Invalid Game"
-                
-                # Create game entry
-                game_frame = ctk.CTkFrame(
-                    self.games_list_frame, 
-                    fg_color="#383838",
-                    corner_radius=5,
-                    height=70
-                )
-                game_frame.pack(fill=tk.X, pady=5, padx=5)
-                game_frame.pack_propagate(False)  # Maintain height
-                
-                # Game ID label with formatted date
-                id_label = ctk.CTkLabel(
-                    game_frame,
-                    text=f"{date_display} ({moves_count} moves)",
-                    font=ctk.CTkFont(size=12, weight="bold"),
-                    text_color="#AAAAAA"
-                )
-                id_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
-                
-                # Winner label with different color based on winner
-                if winner in [1, 2]:
-                    text_color = self.player_colors[winner]["fg"]
-                elif winner == 0:
-                    text_color = "#FFC107"  # Yellow for draw
-                else:
-                    text_color = "#CCCCCC"  # Gray for incomplete
-                
-                winner_label = ctk.CTkLabel(
-                    game_frame,
-                    text=winner_text,
-                    font=ctk.CTkFont(size=14),
-                    text_color=text_color
-                )
-                winner_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
-                
-                # Make the entire frame clickable
-                game_frame.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
-                id_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
-                winner_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
-                
+            # Stop and reset any UI elements
+            self.is_loading = False
+            
+            # Clear loading UI after a short delay
+            self.window.after(500, lambda: self._reset_after_cancel())
+
+    def _reset_after_cancel(self):
+        """Reset UI after canceling load operation"""
+        for widget in self.games_list_frame.winfo_children():
+            widget.destroy()
+        
+        # Show message
+        canceled_msg = ctk.CTkLabel(
+            self.games_list_frame,
+            text="Loading canceled",
+            font=ctk.CTkFont(size=14),
+            text_color="#FFC107"
+        )
+        canceled_msg.pack(pady=10)
+        
+        # Add reload button
+        reload_btn = ctk.CTkButton(
+            self.games_list_frame,
+            text="Reload Games",
+            command=self.load_games,
+            font=ctk.CTkFont(size=14),
+            fg_color="#3E92CC",
+            hover_color="#2D7DB3",
+            corner_radius=8,
+            height=35
+        )
+        reload_btn.pack(pady=15)
+
+    def load_games_standard(self):
+        """Legacy fallback loading method without optimization"""
+        try:
+            self.window.after(0, lambda: self.loading_status.configure(text="Loading game history from CSV..."))
+            return TicTacToeGame.load_game_history_from_csv()
         except Exception as e:
-            # Handle any exceptions during loading
-            print(f"Error loading game history: {e}")
-            import traceback
-            traceback.print_exc()
-            
-            # Remove loading indicator
-            loading_label.destroy()
-            
-            # Show error message
-            error_label = ctk.CTkLabel(
-                self.games_list_frame,
-                text=f"Error loading games: {str(e)}",
-                font=ctk.CTkFont(size=14),
-                text_color="#E63946"
-            )
-            error_label.pack(pady=10)
-            
-            # Add reload button
-            reload_btn = ctk.CTkButton(
-                self.games_list_frame,
-                text="Try Again",
-                command=self.load_games,
-                font=ctk.CTkFont(size=14),
-                fg_color="#3E92CC",
-                hover_color="#2D7DB3",
-                corner_radius=8,
-                height=32
-            )
-            reload_btn.pack(pady=(5, 15), padx=40)
-    
+            print(f"Error in standard loading: {e}")
+            return {}
+
     def select_game(self, game_id):
         """Select a game to view
         
@@ -1139,6 +1227,278 @@ class GameHistoryViewer:
     def run(self):
         """Run the viewer as a standalone application"""
         self.window.mainloop()
+
+    def populate_games_list(self, game_ids, filter_completed=True):
+        """Populate the games list with the given game IDs using pagination
+        
+        Args:
+            game_ids (list): List of game IDs to display
+            filter_completed (bool): Whether to filter out incomplete games
+        """
+        # Clear current list except filter controls
+        for widget in self.games_list_frame.winfo_children():
+            if not isinstance(widget, ctk.CTkFrame) or "filter" not in str(widget):
+                if not isinstance(widget, ctk.CTkFrame) or "pagination" not in str(widget):
+                    widget.destroy()
+        
+        # Apply filter
+        if filter_completed:
+            filtered_ids = [gid for gid in game_ids if self.games[gid].get('winner') is not None]
+        else:
+            filtered_ids = list(game_ids)
+        
+        self.filtered_game_ids = filtered_ids  # Store for pagination
+        total_games = len(filtered_ids)
+        
+        # Calculate pagination
+        total_pages = (total_games + self.page_size - 1) // self.page_size
+        self.total_pages = max(1, total_pages)
+        self.current_page = min(self.current_page, self.total_pages - 1)
+        
+        # Get slice of game IDs for current page
+        start_idx = self.current_page * self.page_size
+        end_idx = min(start_idx + self.page_size, total_games)
+        current_game_ids = filtered_ids[start_idx:end_idx]
+        
+        # Show stats
+        stats_text = f"Showing {start_idx+1}-{end_idx} of {total_games} games"
+        if filter_completed and len(game_ids) > total_games:
+            stats_text += f" ({len(game_ids) - total_games} incomplete games filtered)"
+        
+        stats_label = ctk.CTkLabel(
+            self.games_list_frame,
+            text=stats_text,
+            font=ctk.CTkFont(size=12),
+            text_color="#AAAAAA"
+        )
+        stats_label.pack(anchor=tk.W, padx=10, pady=(5, 0))
+        
+        # Display games for current page
+        displayed_count = 0
+        for game_id in current_game_ids:
+            game = self.games[game_id]
+            
+            # Skip games with no moves
+            if not game.get('moves'):
+                continue
+                
+            # Format date from game_id or timestamp
+            try:
+                if game.get('timestamp') and isinstance(game['timestamp'], str):
+                    # Try to parse a standardized timestamp format
+                    date_parts = game['timestamp'].split()
+                    if len(date_parts) >= 2:
+                        date_display = f"{date_parts[0]} {date_parts[1]}"
+                    else:
+                        date_display = game['timestamp']
+                else:
+                    # Fall back to parsing from game_id
+                    date_str = f"{game_id[:4]}-{game_id[4:6]}-{game_id[6:8]}"
+                    time_str = f"{game_id[9:11]}:{game_id[11:13]}:{game_id[13:15]}"
+                    date_display = f"{date_str} {time_str}"
+            except Exception as e:
+                print(f"Error formatting date for game {game_id}: {e}")
+                date_display = game_id
+            
+            # Get winner info and move count
+            winner = game.get('winner')
+            moves_count = len(game.get('moves', []))
+            
+            if winner in [1, 2]:
+                winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})"
+                text_color = self.player_colors[winner]["fg"]
+            elif winner == 0:
+                winner_text = "Draw"
+                text_color = "#FFC107"  # Yellow for draw
+            else:
+                winner_text = "Incomplete" if moves_count > 0 else "Invalid Game"
+                text_color = "#CCCCCC"  # Gray for incomplete
+            
+            # Create game entry with optimized rendering
+            game_frame = ctk.CTkFrame(
+                self.games_list_frame, 
+                fg_color="#383838",
+                corner_radius=5,
+                height=70
+            )
+            game_frame.pack(fill=tk.X, pady=5, padx=5)
+            game_frame.pack_propagate(False)  # Maintain height
+            
+            # Game ID label with formatted date
+            id_label = ctk.CTkLabel(
+                game_frame,
+                text=f"{date_display} ({moves_count} moves)",
+                font=ctk.CTkFont(size=12, weight="bold"),
+                text_color="#AAAAAA"
+            )
+            id_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
+            
+            # Winner label with appropriate color
+            winner_label = ctk.CTkLabel(
+                game_frame,
+                text=winner_text,
+                font=ctk.CTkFont(size=14),
+                text_color=text_color
+            )
+            winner_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            
+            # Make the entire frame clickable
+            game_frame.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+            id_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+            winner_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+            
+            displayed_count += 1
+        
+        # Show message if no games were displayed
+        if displayed_count == 0:
+            no_games_label = ctk.CTkLabel(
+                self.games_list_frame,
+                text="No games found matching filter criteria",
+                font=ctk.CTkFont(size=14),
+                text_color="#CCCCCC"
+            )
+            no_games_label.pack(pady=10)
+        
+        # Add pagination controls
+        self._add_pagination_controls()
+        
+        # Display count in the status area
+        print(f"Displayed {displayed_count} games (page {self.current_page + 1} of {self.total_pages})")
+
+    def _add_pagination_controls(self):
+        """Add pagination controls to the games list"""
+        # Create pagination frame
+        pagination_frame = ctk.CTkFrame(
+            self.games_list_frame,
+            fg_color="#333333",
+            corner_radius=8,
+            height=40
+        )
+        pagination_frame.pack(fill=tk.X, pady=10, padx=5)
+        pagination_frame.pack_propagate(False)
+        
+        # First page button
+        first_page_btn = ctk.CTkButton(
+            pagination_frame,
+            text="⏮",
+            command=lambda: self._change_page(0),
+            font=ctk.CTkFont(size=14),
+            fg_color="#3E92CC",
+            hover_color="#2D7DB3",
+            width=30,
+            height=25,
+            state="normal" if self.current_page > 0 else "disabled"
+        )
+        first_page_btn.pack(side=tk.LEFT, padx=(10, 2))
+        
+        # Previous page button
+        prev_page_btn = ctk.CTkButton(
+            pagination_frame,
+            text="◀",
+            command=lambda: self._change_page(self.current_page - 1),
+            font=ctk.CTkFont(size=14),
+            fg_color="#3E92CC",
+            hover_color="#2D7DB3",
+            width=30,
+            height=25,
+            state="normal" if self.current_page > 0 else "disabled"
+        )
+        prev_page_btn.pack(side=tk.LEFT, padx=2)
+        
+        # Page indicator
+        page_label = ctk.CTkLabel(
+            pagination_frame,
+            text=f"Page {self.current_page + 1} of {self.total_pages}",
+            font=ctk.CTkFont(size=12),
+            width=100
+        )
+        page_label.pack(side=tk.LEFT, padx=10)
+        
+        # Next page button
+        next_page_btn = ctk.CTkButton(
+            pagination_frame,
+            text="▶",
+            command=lambda: self._change_page(self.current_page + 1),
+            font=ctk.CTkFont(size=14),
+            fg_color="#3E92CC",
+            hover_color="#2D7DB3",
+            width=30,
+            height=25,
+            state="normal" if self.current_page < self.total_pages - 1 else "disabled"
+        )
+        next_page_btn.pack(side=tk.LEFT, padx=2)
+        
+        # Last page button
+        last_page_btn = ctk.CTkButton(
+            pagination_frame,
+            text="⏭",
+            command=lambda: self._change_page(self.total_pages - 1),
+            font=ctk.CTkFont(size=14),
+            fg_color="#3E92CC",
+            hover_color="#2D7DB3",
+            width=30,
+            height=25,
+            state="normal" if self.current_page < self.total_pages - 1 else "disabled"
+        )
+        last_page_btn.pack(side=tk.LEFT, padx=(2, 10))
+
+    def _change_page(self, page_num):
+        """Change to a different page of results
+        
+        Args:
+            page_num (int): Page number (0-based)
+        """
+        if 0 <= page_num < self.total_pages:
+            self.current_page = page_num
+            self.populate_games_list(self.filtered_game_ids, filter_completed=False)  # Already filtered
+
+    def apply_filter(self):
+        """Apply the completed games filter"""
+        filter_completed = self.filter_var.get()
+        
+        # Get all game IDs in proper order
+        game_ids = sorted(
+            self.games.keys(), 
+            key=lambda gid: self.games[gid].get('timestamp', gid),
+            reverse=True
+        )
+        
+        # Reset to first page when filter changes
+        self.current_page = 0
+        
+        # Repopulate with filter applied
+        self.populate_games_list(game_ids, filter_completed)
+
+    def add_filter_controls(self):
+        """Add filter controls to the games list"""
+        filter_frame = ctk.CTkFrame(
+            self.games_list_frame,
+            fg_color="#333333",
+            corner_radius=8
+        )
+        filter_frame.pack(fill=tk.X, pady=(0, 10), padx=5)
+        
+        self.filter_var = tk.BooleanVar(value=True)
+        
+        filter_label = ctk.CTkLabel(
+            filter_frame,
+            text="Filter:",
+            font=ctk.CTkFont(size=12),
+            width=40,
+            anchor="w"
+        )
+        filter_label.pack(side=tk.LEFT, padx=5)
+        
+        filter_check = ctk.CTkCheckBox(
+            filter_frame,
+            text="Completed Games Only",
+            variable=self.filter_var,
+            command=self.apply_filter,
+            font=ctk.CTkFont(size=12),
+            checkbox_width=18,
+            checkbox_height=18
+        )
+        filter_check.pack(side=tk.LEFT, padx=5, pady=5)
 
 # Allow running this module directly
 if __name__ == "__main__":
