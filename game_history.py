@@ -272,79 +272,170 @@ class GameHistoryViewer:
         for widget in self.games_list_frame.winfo_children():
             widget.destroy()
         
-        # Load game data
-        self.games = TicTacToeGame.load_game_history_from_csv()
+        # Add a loading indicator
+        loading_label = ctk.CTkLabel(
+            self.games_list_frame,
+            text="Loading games...",
+            font=ctk.CTkFont(size=14),
+            text_color="#CCCCCC"
+        )
+        loading_label.pack(pady=10)
+        self.window.update_idletasks()  # Force UI update to show loading message
         
-        if not self.games:
-            no_games_label = ctk.CTkLabel(
+        try:
+            # Load game data with verbose debugging
+            print("Beginning game history load...")
+            csv_path = os.path.join(os.path.dirname(__file__), "game_data", TicTacToeGame.GAME_DATA_FILE)
+            if not os.path.exists(csv_path):
+                print(f"CSV file not found at: {csv_path}")
+                loading_label.destroy()
+                no_games_label = ctk.CTkLabel(
+                    self.games_list_frame,
+                    text="No games found - CSV file missing",
+                    font=ctk.CTkFont(size=14),
+                    text_color="#E63946"
+                )
+                no_games_label.pack(pady=10)
+                return
+            
+            print(f"CSV file found at: {csv_path}")
+            self.games = TicTacToeGame.load_game_history_from_csv()
+            print(f"Loaded games count: {len(self.games)}")
+            
+            # Remove loading indicator
+            loading_label.destroy()
+            
+            if not self.games:
+                no_games_label = ctk.CTkLabel(
+                    self.games_list_frame,
+                    text="No games found in history",
+                    font=ctk.CTkFont(size=14),
+                    text_color="#CCCCCC"
+                )
+                no_games_label.pack(pady=10)
+                return
+            
+            # Sort game IDs by timestamp (assuming game_id format is datetime-based)
+            # Handle potentially malformed IDs gracefully
+            def get_game_timestamp(game_id):
+                try:
+                    # Try to parse as numeric timestamp
+                    if isinstance(game_id, str) and len(game_id) >= 8:
+                        # Extract date part for sorting
+                        return game_id[:8] + (game_id[9:15] if len(game_id) > 9 else "")
+                    return "0"  # Default for malformed IDs
+                except Exception:
+                    return "0"  # Default for any parsing errors
+            
+            game_ids = sorted(self.games.keys(), 
+                             key=get_game_timestamp,
+                             reverse=True)
+            
+            print(f"Sorted game IDs: {len(game_ids)}")
+            
+            # Debug any empty games
+            empty_games = [gid for gid in game_ids if not self.games[gid].get('moves')]
+            if empty_games:
+                print(f"Warning: Found {len(empty_games)} games with no moves")
+            
+            for game_id in game_ids:
+                game = self.games[game_id]
+                
+                # Skip games with no moves
+                if not game.get('moves'):
+                    print(f"Skipping game with no moves: {game_id}")
+                    continue
+                    
+                # Format date from game_id
+                try:
+                    date_str = f"{game_id[:4]}-{game_id[4:6]}-{game_id[6:8]}"
+                    time_str = f"{game_id[9:11]}:{game_id[11:13]}:{game_id[13:15]}"
+                    date_display = f"{date_str} {time_str}"
+                except Exception as e:
+                    print(f"Error formatting date for game {game_id}: {e}")
+                    date_display = game_id
+                
+                # Get winner info
+                winner = game.get('winner')
+                moves_count = len(game.get('moves', []))
+                
+                if winner in [1, 2]:
+                    winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})"
+                elif winner == 0:
+                    winner_text = "Draw"
+                else:
+                    winner_text = "Incomplete" if moves_count > 0 else "Invalid Game"
+                
+                # Create game entry
+                game_frame = ctk.CTkFrame(
+                    self.games_list_frame, 
+                    fg_color="#383838",
+                    corner_radius=5,
+                    height=70
+                )
+                game_frame.pack(fill=tk.X, pady=5, padx=5)
+                game_frame.pack_propagate(False)  # Maintain height
+                
+                # Game ID label with formatted date
+                id_label = ctk.CTkLabel(
+                    game_frame,
+                    text=f"{date_display} ({moves_count} moves)",
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color="#AAAAAA"
+                )
+                id_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
+                
+                # Winner label with different color based on winner
+                if winner in [1, 2]:
+                    text_color = self.player_colors[winner]["fg"]
+                elif winner == 0:
+                    text_color = "#FFC107"  # Yellow for draw
+                else:
+                    text_color = "#CCCCCC"  # Gray for incomplete
+                
+                winner_label = ctk.CTkLabel(
+                    game_frame,
+                    text=winner_text,
+                    font=ctk.CTkFont(size=14),
+                    text_color=text_color
+                )
+                winner_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+                
+                # Make the entire frame clickable
+                game_frame.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+                id_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+                winner_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+                
+        except Exception as e:
+            # Handle any exceptions during loading
+            print(f"Error loading game history: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            # Remove loading indicator
+            loading_label.destroy()
+            
+            # Show error message
+            error_label = ctk.CTkLabel(
                 self.games_list_frame,
-                text="No games found",
+                text=f"Error loading games: {str(e)}",
                 font=ctk.CTkFont(size=14),
-                text_color="#CCCCCC"
+                text_color="#E63946"
             )
-            no_games_label.pack(pady=10)
-            return
-        
-        # Sort game IDs by timestamp (assuming game_id format is datetime-based)
-        game_ids = sorted(self.games.keys(), reverse=True)
-        
-        for game_id in game_ids:
-            game = self.games[game_id]
+            error_label.pack(pady=10)
             
-            # Format date from game_id
-            try:
-                date_str = f"{game_id[:4]}-{game_id[4:6]}-{game_id[6:8]}"
-                time_str = f"{game_id[9:11]}:{game_id[11:13]}:{game_id[13:15]}"
-                date_display = f"{date_str} {time_str}"
-            except:
-                date_display = game_id
-            
-            # Get winner info
-            winner = game.get('winner')
-            if winner:
-                winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})"
-            else:
-                winner_text = "Draw" if game['moves'] else "Incomplete"
-            
-            # Create game entry
-            game_frame = ctk.CTkFrame(
-                self.games_list_frame, 
-                fg_color="#383838",
-                corner_radius=5,
-                height=70
-            )
-            game_frame.pack(fill=tk.X, pady=5, padx=5)
-            game_frame.pack_propagate(False)  # Maintain height
-            
-            # Game ID label with formatted date
-            id_label = ctk.CTkLabel(
-                game_frame,
-                text=date_display,
-                font=ctk.CTkFont(size=12, weight="bold"),
-                text_color="#AAAAAA"
-            )
-            id_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
-            
-            # Winner label with different color based on winner
-            if winner:
-                text_color = self.player_colors[winner]["fg"]
-            elif winner_text == "Draw":
-                text_color = "#FFC107"  # Yellow for draw
-            else:
-                text_color = "#CCCCCC"  # Gray for incomplete
-            
-            winner_label = ctk.CTkLabel(
-                game_frame,
-                text=winner_text,
+            # Add reload button
+            reload_btn = ctk.CTkButton(
+                self.games_list_frame,
+                text="Try Again",
+                command=self.load_games,
                 font=ctk.CTkFont(size=14),
-                text_color=text_color
+                fg_color="#3E92CC",
+                hover_color="#2D7DB3",
+                corner_radius=8,
+                height=32
             )
-            winner_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
-            
-            # Make the entire frame clickable
-            game_frame.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
-            id_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
-            winner_label.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
+            reload_btn.pack(pady=(5, 15), padx=40)
     
     def select_game(self, game_id):
         """Select a game to view
@@ -431,6 +522,17 @@ class GameHistoryViewer:
         header_frame = ctk.CTkFrame(main_frame, fg_color="#333333", corner_radius=5)
         header_frame.pack(fill=tk.X, pady=(0, 10))
         
+        # Add file path info for debugging
+        csv_path = os.path.join(os.path.dirname(__file__), "game_data", TicTacToeGame.GAME_DATA_FILE)
+        csv_info = ctk.CTkLabel(
+            header_frame,
+            text=f"CSV Path: {csv_path}",
+            font=ctk.CTkFont(size=10),
+            text_color="#AAAAAA"
+        )
+        csv_info.pack(anchor=tk.W, padx=10, pady=(5, 0))
+        
+        # Rest of the header
         header_label = ctk.CTkLabel(
             header_frame,
             text=f"Game ID: {self.selected_game_id}",
@@ -438,6 +540,16 @@ class GameHistoryViewer:
             text_color="#EEEEEE"
         )
         header_label.pack(anchor=tk.W, padx=10, pady=5)
+        
+        # Move count
+        move_count = len(game.get('moves', []))
+        move_count_label = ctk.CTkLabel(
+            header_frame,
+            text=f"Total Moves: {move_count}",
+            font=ctk.CTkFont(size=12),
+            text_color="#DDDDDD"
+        )
+        move_count_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
         
         winner = game.get('winner')
         winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})" if winner in [1, 2] else (
@@ -454,6 +566,47 @@ class GameHistoryViewer:
         )
         result_label.pack(anchor=tk.W, padx=10, pady=5)
         
+        # Fix bug in empty games
+        moves = game.get('moves', [])
+        if not moves:
+            empty_msg = ctk.CTkLabel(
+                main_frame,
+                text="No moves found for this game. The data may be corrupted.",
+                font=ctk.CTkFont(size=16),
+                text_color="#E63946"
+            )
+            empty_msg.pack(pady=50)
+            
+            # Skip the rest of the move display for empty games
+            close_btn = ctk.CTkButton(
+                main_frame,
+                text="Close",
+                command=debug_window.destroy,
+                font=ctk.CTkFont(size=14),
+                fg_color="#E63946",
+                hover_color="#C5313E",
+                height=35
+            )
+            close_btn.pack(pady=15)
+            
+            # Function to make window modal safely after it's visible
+            def make_modal():
+                try:
+                    debug_window.deiconify()
+                    debug_window.focus_force()
+                    debug_window.update()
+                    try:
+                        debug_window.grab_set()
+                    except Exception:
+                        pass
+                except Exception as e:
+                    print(f"Error making debug window modal: {e}")
+            
+            debug_window.after(100, make_modal)
+            debug_window.transient(self.window)
+            return
+
+        # Continue with move data display for non-empty games
         # Move data table
         moves_frame = ctk.CTkScrollableFrame(main_frame, fg_color="transparent")
         moves_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)

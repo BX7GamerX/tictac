@@ -185,7 +185,17 @@ class TicTacToeGame:
         if not os.path.exists(csv_path):
             print(f"CSV file not found: {csv_path}")
             return {}
-            
+        
+        # Add file size check
+        try:
+            file_size = os.path.getsize(csv_path)
+            print(f"CSV file size: {file_size} bytes")
+            if file_size == 0:
+                print("CSV file is empty")
+                return {}
+        except Exception as e:
+            print(f"Error checking file size: {e}")
+        
         games = {}
         
         try:
@@ -195,11 +205,29 @@ class TicTacToeGame:
             with open(csv_path, 'r', newline='') as csvfile:
                 reader = csv.DictReader(csvfile)
                 
+                # Validate column headers
+                headers = reader.fieldnames
+                print(f"CSV Headers: {headers}")
+                
+                required_fields = ['game_id', 'move_number', 'player', 'row', 'col', 'board_state']
+                missing_fields = [field for field in required_fields if field not in headers]
+                
+                if missing_fields:
+                    print(f"Warning: CSV missing required fields: {missing_fields}")
+                
                 # Group moves by game_id to detect duplicate game IDs
                 game_moves = {}
+                row_count = 0
+                error_count = 0
                 
                 for row in reader:
-                    curr_game_id = row['game_id']
+                    row_count += 1
+                    curr_game_id = row.get('game_id')
+                    
+                    if not curr_game_id:
+                        print(f"Warning: Row {row_count} has no game_id, skipping")
+                        error_count += 1
+                        continue
                     
                     # Skip if we're looking for a specific game and this isn't it
                     if game_id and curr_game_id != game_id:
@@ -209,21 +237,70 @@ class TicTacToeGame:
                     if curr_game_id not in game_moves:
                         game_moves[curr_game_id] = []
                         
-                    # Parse move data
+                    # Parse move data with robust error handling
                     try:
-                        move_number = int(row['move_number'])
-                        player = int(row['player'])
-                        row_idx = int(row['row'])
-                        col_idx = int(row['col'])
-                        board_state = row['board_state']
+                        # Extract and validate required fields
+                        try:
+                            move_number = int(row['move_number'])
+                        except (ValueError, KeyError):
+                            move_number = len(game_moves[curr_game_id]) + 1
+                        
+                        try:
+                            player = int(row['player'])
+                            if player not in [1, 2]:
+                                print(f"Warning: Invalid player value {player} in game {curr_game_id}")
+                                player = 1  # Default to player 1
+                        except (ValueError, KeyError):
+                            print(f"Warning: Invalid player value in game {curr_game_id}")
+                            player = 1  # Default to player 1
+                        
+                        try:
+                            row_idx = int(row['row'])
+                            col_idx = int(row['col'])
+                            # Validate row/col are in range 0-2
+                            if not (0 <= row_idx <= 2 and 0 <= col_idx <= 2):
+                                print(f"Warning: Position ({row_idx},{col_idx}) out of range in game {curr_game_id}")
+                                row_idx = min(max(row_idx, 0), 2)
+                                col_idx = min(max(col_idx, 0), 2)
+                        except (ValueError, KeyError):
+                            print(f"Warning: Invalid position in game {curr_game_id}")
+                            row_idx, col_idx = 0, 0  # Default to top-left
+                        
+                        # Parse board state
+                        try:
+                            board_state = row.get('board_state', '000000000')
+                            if not board_state or len(board_state) != 9:
+                                print(f"Warning: Invalid board state length in game {curr_game_id}: {board_state}")
+                                # Create default board
+                                board_state = '000000000'
+                            
+                            # Validate board state contains only valid values
+                            if not all(c in '012' for c in board_state):
+                                print(f"Warning: Invalid characters in board state: {board_state}")
+                                # Clean up invalid characters
+                                board_state = ''.join(c if c in '012' else '0' for c in board_state)
+                            
+                            # Convert to numpy array
+                            board = np.array([int(c) for c in board_state]).reshape(3, 3)
+                        except Exception as e:
+                            print(f"Error parsing board state in game {curr_game_id}: {e}")
+                            # Create empty board
+                            board = np.zeros((3, 3), dtype=int)
+                        
+                        # Get optional fields
                         timestamp = row.get('timestamp', 'Unknown')
                         
                         # Parse winner value (may be empty)
                         winner_value = row.get('winner', '').strip()
-                        winner = int(winner_value) if winner_value else None
                         
-                        # Parse board state string to numpy array 
-                        board = np.array([int(c) for c in board_state]).reshape(3, 3)
+                        try:
+                            winner = int(winner_value) if winner_value else None
+                            # Validate winner is a valid value (0, 1, 2 or None)
+                            if winner not in [None, 0, 1, 2]:
+                                print(f"Warning: Invalid winner value {winner} in game {curr_game_id}")
+                                winner = None
+                        except ValueError:
+                            winner = None
                         
                         # Store move data
                         game_moves[curr_game_id].append({
@@ -235,19 +312,25 @@ class TicTacToeGame:
                             'winner': winner
                         })
                     except Exception as e:
-                        print(f"Error parsing move for game {curr_game_id}: {e}")
+                        print(f"Error parsing move for game {curr_game_id}, row {row_count}: {e}")
+                        error_count += 1
                         continue
                 
                 # Process each game's moves
-                print(f"Found {len(game_moves)} distinct game IDs")
+                print(f"Found {len(game_moves)} distinct game IDs, {row_count} total rows, {error_count} errors")
                 
                 for game_id, moves in game_moves.items():
+                    # Skip empty games
+                    if not moves:
+                        print(f"Warning: Game {game_id} has no valid moves, skipping")
+                        continue
+                    
                     # Sort moves by move number
                     moves.sort(key=lambda x: x['move_number'])
                     
                     # Check for possible duplicate game IDs (games with overlapping move numbers)
                     move_numbers = [move['move_number'] for move in moves]
-                    if len(move_numbers) != len(set(move_numbers)):
+                    if len(set(move_numbers)) < len(move_numbers):
                         print(f"Warning: Game {game_id} has duplicate move numbers. This may be multiple games with same ID.")
                         
                         # Try to split into separate games
