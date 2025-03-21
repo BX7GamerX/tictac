@@ -1,0 +1,270 @@
+{
+  "game_id": "20250321_143058",
+  "timestamp": "2025-03-21 14:31:41",
+  "winner": 1,
+  "moves": {
+    "all_moves": [
+      {
+        "cell_index": 2,
+        "row": 0,
+        "col": 2,
+        "player": 1,
+        "board_state": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 1
+      },
+      {
+        "cell_index": 4,
+        "row": 1,
+        "col": 1,
+        "player": 2,
+        "board_state": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 2
+      },
+      {
+        "cell_index": 5,
+        "row": 1,
+        "col": 2,
+        "player": 1,
+        "board_state": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 3
+      },
+      {
+        "cell_index": 1,
+        "row": 0,
+        "col": 1,
+        "player": 2,
+        "board_state": [
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 4
+      },
+      {
+        "cell_index": 8,
+        "row": 2,
+        "col": 2,
+        "player": 1,
+        "board_state": [
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "move_number": 5
+      }
+    ],
+    "player1_moves": [
+      {
+        "cell_index": 2,
+        "row": 0,
+        "col": 2,
+        "player": 1,
+        "board_state": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 1
+      },
+      {
+        "cell_index": 5,
+        "row": 1,
+        "col": 2,
+        "player": 1,
+        "board_state": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 2
+      },
+      {
+        "cell_index": 8,
+        "row": 2,
+        "col": 2,
+        "player": 1,
+        "board_state": [
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            1
+          ]
+        ],
+        "move_number": 3
+      }
+    ],
+    "player2_moves": [
+      {
+        "cell_index": 4,
+        "row": 1,
+        "col": 1,
+        "player": 2,
+        "board_state": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            2,
+            0
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 1
+      },
+      {
+        "cell_index": 1,
+        "row": 0,
+        "col": 1,
+        "player": 2,
+        "board_state": [
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            2,
+            1
+          ],
+          [
+            0,
+            0,
+            0
+          ]
+        ],
+        "move_number": 2
+      }
+    ],
+    "final_board": [
+      [
+        0,
+        2,
+        1
+      ],
+      [
+        0,
+        2,
+        1
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ]
+  }
+}

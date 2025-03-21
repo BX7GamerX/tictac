@@ -9,6 +9,7 @@ from ai_player import AIPlayer
 from assets_manager import AssetManager, ASSETS_DIR
 from game_history import GameHistoryViewer
 from ai_trainer import AITrainingWindow
+from threaded_task_manager import run_in_background, ThreadedTaskManager
 
 class TicTacToeApp:
     def __init__(self, root, assets_manager=None):
@@ -16,6 +17,9 @@ class TicTacToeApp:
         self.root.title("Tic Tac Toe")
         self.root.geometry("900x700")  # Wider to accommodate history panel
         self.root.configure(fg_color="#1E1E1E")  # Dark background
+        
+        # Add application state flag
+        self.is_closing = False
         
         # Setup asset manager
         self.assets = assets_manager if assets_manager else AssetManager()
@@ -57,6 +61,9 @@ class TicTacToeApp:
         
         # Load game history after UI setup
         self.load_history()
+        
+        # Set the proper window close handler
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
     
     def setup_ui(self):
         # Create a main container with two panels (game and history)
@@ -308,9 +315,9 @@ class TicTacToeApp:
         history_sep = ctk.CTkFrame(self.history_panel, height=2, fg_color="#3E92CC")
         history_sep.pack(fill=tk.X, padx=30, pady=(0, 10))
         
-        # History statistics section
+        # History statistics section - improved padding and corners
         stats_frame = ctk.CTkFrame(self.history_panel, fg_color="#2A2A2A", corner_radius=10)
-        stats_frame.pack(fill=tk.X, padx=10, pady=5)
+        stats_frame.pack(fill=tk.X, padx=10, pady=(5, 10))  # Better vertical spacing
         
         # Stats title
         stats_title = ctk.CTkLabel(
@@ -319,20 +326,20 @@ class TicTacToeApp:
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color="#EEEEEE"
         )
-        stats_title.pack(pady=(5, 0))
+        stats_title.pack(pady=(8, 0))  # Increase top padding
         
         # Stats container with grid layout for stats
         self.stats_container = ctk.CTkFrame(stats_frame, fg_color="transparent")
-        self.stats_container.pack(pady=5, padx=5, fill=tk.X)
+        self.stats_container.pack(pady=(5, 8), padx=5, fill=tk.X)  # Increase bottom padding
         
-        # Labels for stats
+        # Labels for stats - increase spacing between items
         self.total_games_label = ctk.CTkLabel(
             self.stats_container,
             text="Total Games: 0",
             font=ctk.CTkFont(size=12),
             text_color="#CCCCCC"
         )
-        self.total_games_label.pack(anchor=tk.W, padx=10, pady=2)
+        self.total_games_label.pack(anchor=tk.W, padx=10, pady=3)  # Increased vertical padding
         
         self.x_wins_label = ctk.CTkLabel(
             self.stats_container,
@@ -340,7 +347,7 @@ class TicTacToeApp:
             font=ctk.CTkFont(size=12),
             text_color=self.player_colors[1]["fg"]
         )
-        self.x_wins_label.pack(anchor=tk.W, padx=10, pady=2)
+        self.x_wins_label.pack(anchor=tk.W, padx=10, pady=3)  # Increased vertical padding
         
         self.o_wins_label = ctk.CTkLabel(
             self.stats_container,
@@ -348,7 +355,7 @@ class TicTacToeApp:
             font=ctk.CTkFont(size=12),
             text_color=self.player_colors[2]["fg"]
         )
-        self.o_wins_label.pack(anchor=tk.W, padx=10, pady=2)
+        self.o_wins_label.pack(anchor=tk.W, padx=10, pady=3)  # Increased vertical padding
         
         self.draws_label = ctk.CTkLabel(
             self.stats_container,
@@ -356,9 +363,9 @@ class TicTacToeApp:
             font=ctk.CTkFont(size=12),
             text_color="#FFC107"  # Yellow for draws
         )
-        self.draws_label.pack(anchor=tk.W, padx=10, pady=2)
+        self.draws_label.pack(anchor=tk.W, padx=10, pady=3)  # Increased vertical padding
         
-        # Refresh button
+        # Refresh button with better spacing
         refresh_btn = ctk.CTkButton(
             stats_frame,
             text="Refresh History",
@@ -369,10 +376,11 @@ class TicTacToeApp:
             corner_radius=6,
             height=25
         )
-        refresh_btn.pack(pady=5)
+        refresh_btn.pack(pady=(0, 8))  # Only add bottom padding
         
-        # Recent games list
+        # Recent games list with better proportions
         recent_games_frame = ctk.CTkFrame(self.history_panel, fg_color="#2A2A2A", corner_radius=10)
+        # Use weight=2 to give more space to game list compared to other elements
         recent_games_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # Recent games title
@@ -382,7 +390,7 @@ class TicTacToeApp:
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color="#EEEEEE"
         )
-        recent_games_title.pack(pady=(5, 0))
+        recent_games_title.pack(pady=(8, 0))  # Increased top padding
         
         # Scrollable frame for the game list
         self.games_list_frame = ctk.CTkScrollableFrame(
@@ -401,25 +409,25 @@ class TicTacToeApp:
         )
         self.placeholder_label.pack(pady=20)
         
-        # Mini board preview for selected game
-        self.preview_frame = ctk.CTkFrame(self.history_panel, fg_color="#2A2A2A", corner_radius=10, height=150)
+        # Mini board preview for selected game - fixed height
+        self.preview_frame = ctk.CTkFrame(self.history_panel, fg_color="#2A2A2A", corner_radius=10, height=180)  # Increased height
         self.preview_frame.pack(fill=tk.X, padx=10, pady=10)
         self.preview_frame.pack_propagate(False)  # Maintain fixed height
         
-        # Preview title
+        # Preview title with more space
         self.preview_title = ctk.CTkLabel(
             self.preview_frame,
             text="Game Preview",
             font=ctk.CTkFont(size=14, weight="bold"),
             text_color="#EEEEEE"
         )
-        self.preview_title.pack(pady=(5, 0))
+        self.preview_title.pack(pady=(10, 5))  # Increased top padding
         
-        # Mini board container
+        # Mini board container with better centering
         self.mini_board_frame = ctk.CTkFrame(self.preview_frame, fg_color="transparent")
-        self.mini_board_frame.pack(expand=True, pady=5)
+        self.mini_board_frame.pack(expand=True, pady=10)  # Increased padding
         
-        # Create mini board cells
+        # Create mini board cells - larger cells for better visibility
         self.mini_cells = [[None for _ in range(3)] for _ in range(3)]
         
         for i in range(3):
@@ -427,19 +435,23 @@ class TicTacToeApp:
                 cell = ctk.CTkButton(
                     self.mini_board_frame, 
                     text="",
-                    width=30,
-                    height=30,
+                    width=35,  # Slightly larger
+                    height=35,  # Slightly larger
                     font=ctk.CTkFont(size=16, weight="bold"),
                     fg_color="#383838",
                     text_color="#FFFFFF",
                     corner_radius=3,
                     state="disabled"  # Cells are non-interactive
                 )
-                cell.grid(row=i, column=j, padx=2, pady=2)
+                cell.grid(row=i, column=j, padx=3, pady=3)  # Increased cell spacing
                 self.mini_cells[i][j] = cell
     
     def load_history(self):
         """Load game history data and update the history panel"""
+        # Don't start loading if application is closing
+        if self.is_closing:
+            return
+            
         # Clear the games list
         for widget in self.games_list_frame.winfo_children():
             widget.destroy()
@@ -456,62 +468,69 @@ class TicTacToeApp:
         # Force UI update to show loading screen
         self.root.update_idletasks()
         
-        # Load game history in a separate thread
-        import threading
-        self.loading_thread = threading.Thread(target=self._load_history_async)
-        self.loading_thread.daemon = True
-        self.loading_thread.start()
-        
-        # Check for completion
-        self.root.after(100, self._check_history_loading_complete)
-    
-    def _load_history_async(self):
-        """Load game history data asynchronously"""
-        try:
-            # Try to use data integration if available
+        # Load game history in a background thread with proper UI reference
+        def load_history_data():
             try:
-                from game_data_integration import GameDataIntegration
-                data_manager = GameDataIntegration(use_cache=True)
-                self.history_games = data_manager.get_all_games()
-            except ImportError:
-                # Fall back to direct loading
-                self.history_games = TicTacToeGame.load_game_history_from_csv()
-            
-            # Sort games by timestamp (most recent first)
-            self.sorted_game_ids = sorted(
-                self.history_games.keys(),
-                key=lambda gid: self.history_games[gid].get('timestamp', gid),
-                reverse=True
-            )
-        except Exception as e:
-            print(f"Error loading history data: {e}")
-            import traceback
-            traceback.print_exc()
-            self.history_games = {}
-            self.sorted_game_ids = []
-    
-    def _check_history_loading_complete(self):
-        """Check if history loading is complete and update UI if so"""
-        # Check if loading thread is still running
-        if self.loading_thread.is_alive():
-            # Still loading, check again later
-            self.root.after(100, self._check_history_loading_complete)
-            return
+                # Try to use the game data integration system
+                try:
+                    from game_data_integration import GameDataIntegration
+                    data_manager = GameDataIntegration(use_cache=True)
+                    self.history_games = data_manager.get_all_games()
+                except ImportError:
+                    # Fall back to direct loading
+                    from game import TicTacToeGame
+                    self.history_games = TicTacToeGame.load_game_history_from_csv()
+                
+                # Sort game IDs by timestamp
+                self.sorted_game_ids = sorted(
+                    self.history_games.keys(),
+                    key=lambda gid: self.history_games[gid].get('timestamp', gid),
+                    reverse=True
+                )
+                
+                return True
+            except Exception as e:
+                print(f"Error loading game history: {e}")
+                import traceback
+                traceback.print_exc()
+                return False
         
-        # Loading complete, update UI
-        self._update_history_ui()
+        # Callback when history data is loaded - ensure it has direct reference to the widget
+        # and checks widget existence before updating UI
+        def on_history_loaded(success):
+            # Skip update if application is closing or destroyed
+            if getattr(self, 'is_closing', True) or not hasattr(self, 'root') or not self.root.winfo_exists():
+                print("Application closing or destroyed, skipping history update")
+                return
+            self._update_history_ui()
+        
+        # Run in background with explicit UI reference
+        from threaded_task_manager import run_in_background
+        run_in_background(load_history_data, on_history_loaded)
     
     def _update_history_ui(self):
         """Update the history UI with loaded data"""
-        # Clear the games list
-        for widget in self.games_list_frame.winfo_children():
-            widget.destroy()
+        # Skip update if application is closing
+        if getattr(self, 'is_closing', True):
+            return
+            
+        # First check if the widgets still exist
+        if not hasattr(self, 'root') or not self.root.winfo_exists() or not hasattr(self, 'games_list_frame'):
+            print("Root window or games list frame no longer exists, aborting history UI update")
+            return
+            
+        # Clear the games list with widget existence check
+        if hasattr(self, 'games_list_frame') and self.games_list_frame.winfo_exists():
+            for widget in self.games_list_frame.winfo_children():
+                if widget.winfo_exists():
+                    widget.destroy()
         
-        # Update statistics
-        self._update_statistics()
+        # Update statistics if widgets exist
+        if hasattr(self, 'total_games_label') and self.total_games_label.winfo_exists():
+            self._update_statistics()
         
         # Show message if no games found
-        if not self.history_games:
+        if not self.history_games and hasattr(self, 'games_list_frame') and self.games_list_frame.winfo_exists():
             no_games_label = ctk.CTkLabel(
                 self.games_list_frame,
                 text="No games found in history",
@@ -521,9 +540,16 @@ class TicTacToeApp:
             no_games_label.pack(pady=20)
             return
         
-        # Display recent games (limited to 20 most recent)
+        # Display recent games (limited to 20 most recent) with widget existence checks
+        if not hasattr(self, 'games_list_frame') or not self.games_list_frame.winfo_exists():
+            return
+            
         max_games = min(20, len(self.sorted_game_ids))
         for i in range(max_games):
+            # Skip if the frame no longer exists
+            if not hasattr(self, 'games_list_frame') or not self.games_list_frame.winfo_exists():
+                break
+                
             game_id = self.sorted_game_ids[i]
             game = self.history_games[game_id]
             
@@ -551,45 +577,72 @@ class TicTacToeApp:
                 winner_text = "Incomplete"
                 winner_color = "#AAAAAA"  # Gray for incomplete
             
-            # Create game entry
-            game_frame = ctk.CTkFrame(
-                self.games_list_frame,
-                fg_color="#383838",
-                corner_radius=5,
-                height=60
-            )
-            game_frame.pack(fill=tk.X, pady=3, padx=5)
-            game_frame.pack_propagate(False)  # Maintain fixed height
-            
-            # Date label
-            date_label = ctk.CTkLabel(
-                game_frame,
-                text=date_display,
-                font=ctk.CTkFont(size=11),
-                text_color="#AAAAAA"
-            )
-            date_label.pack(anchor=tk.W, padx=10, pady=(8, 0))
-            
-            # Result label
-            result_label = ctk.CTkLabel(
-                game_frame,
-                text=f"{winner_text} · {move_count} moves",
-                font=ctk.CTkFont(size=12, weight="bold"),
-                text_color=winner_color
-            )
-            result_label.pack(anchor=tk.W, padx=10, pady=(0, 8))
-            
-            # Make the frame clickable
-            game_frame.bind("<Button-1>", lambda e, gid=game_id: self._show_game_preview(gid))
-            date_label.bind("<Button-1>", lambda e, gid=game_id: self._show_game_preview(gid))
-            result_label.bind("<Button-1>", lambda e, gid=game_id: self._show_game_preview(gid))
+            # Create game entry with improved spacing and fixed height with widget existence check
+            try:
+                game_frame = ctk.CTkFrame(
+                    self.games_list_frame,
+                    fg_color="#383838",
+                    corner_radius=5,
+                    height=65  # Slightly taller for better spacing
+                )
+                game_frame.pack(fill=tk.X, pady=4, padx=5)  # Consistent spacing between entries
+                game_frame.pack_propagate(False)  # Maintain fixed height
+                
+                # Date label with better positioning
+                date_label = ctk.CTkLabel(
+                    game_frame,
+                    text=date_display,
+                    font=ctk.CTkFont(size=11),
+                    text_color="#AAAAAA"
+                )
+                date_label.pack(anchor=tk.W, padx=10, pady=(10, 2))  # Better vertical position
+                
+                # Result label with better spacing
+                result_label = ctk.CTkLabel(
+                    game_frame,
+                    text=f"{winner_text} · {move_count} moves",
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color=winner_color
+                )
+                result_label.pack(anchor=tk.W, padx=10, pady=(2, 10))  # Better vertical position
+                
+                # Make the frame clickable with safe event handlers
+                def create_safe_click_handler(gid):
+                    return lambda e, game_id=gid: self._safe_show_game_preview(game_id)
+                    
+                safe_click_handler = create_safe_click_handler(game_id)
+                game_frame.bind("<Button-1>", safe_click_handler)
+                date_label.bind("<Button-1>", safe_click_handler)
+                result_label.bind("<Button-1>", safe_click_handler)
+            except Exception as e:
+                print(f"Error creating game history entry: {e}")
         
-        # Select the first game for preview
-        if self.sorted_game_ids:
-            self._show_game_preview(self.sorted_game_ids[0])
+        # Select the first game for preview if available
+        if self.sorted_game_ids and hasattr(self, 'preview_frame') and self.preview_frame.winfo_exists():
+            self._safe_show_game_preview(self.sorted_game_ids[0])
+    
+    def _safe_show_game_preview(self, game_id):
+        """Thread-safe wrapper to show a game preview with widget existence checks"""
+        # Skip update if application is closing
+        if getattr(self, 'is_closing', True):
+            return
+            
+        if not hasattr(self, 'root') or not self.root.winfo_exists():
+            return
+            
+        # Use the after method to ensure UI updates happen on the main thread
+        self.root.after(0, lambda: self._show_game_preview(game_id))
     
     def _update_statistics(self):
-        """Update the statistics display"""
+        """Update the statistics display with widget existence checks"""
+        # Skip if widgets don't exist
+        if not all(hasattr(self, attr) for attr in ['total_games_label', 'x_wins_label', 'o_wins_label', 'draws_label']):
+            return
+            
+        # Skip if any widget has been destroyed
+        if not all(getattr(self, attr).winfo_exists() for attr in ['total_games_label', 'x_wins_label', 'o_wins_label', 'draws_label']):
+            return
+        
         total_games = len(self.history_games)
         x_wins = sum(1 for game in self.history_games.values() if game.get('winner') == 1)
         o_wins = sum(1 for game in self.history_games.values() if game.get('winner') == 2)
@@ -600,19 +653,25 @@ class TicTacToeApp:
         o_pct = (o_wins / total_games * 100) if total_games > 0 else 0
         draws_pct = (draws / total_games * 100) if total_games > 0 else 0
         
-        # Update labels
-        self.total_games_label.configure(text=f"Total Games: {total_games}")
-        self.x_wins_label.configure(text=f"X Wins: {x_wins} ({x_pct:.1f}%)")
-        self.o_wins_label.configure(text=f"O Wins: {o_wins} ({o_pct:.1f}%)")
-        self.draws_label.configure(text=f"Draws: {draws} ({draws_pct:.1f}%)")
+        # Update labels with widget existence checks
+        with_config = lambda w, **kw: w.configure(**kw) if hasattr(w, 'winfo_exists') and w.winfo_exists() else None
+        
+        with_config(self.total_games_label, text=f"Total Games: {total_games}")
+        with_config(self.x_wins_label, text=f"X Wins: {x_wins} ({x_pct:.1f}%)")
+        with_config(self.o_wins_label, text=f"O Wins: {o_wins} ({o_pct:.1f}%)")
+        with_config(self.draws_label, text=f"Draws: {draws} ({draws_pct:.1f}%)")
     
     def _show_game_preview(self, game_id):
-        """Show a preview of the selected game
+        """Show a preview of the selected game with widget existence checks
         
         Args:
             game_id (str): ID of the game to preview
         """
-        if game_id not in self.history_games:
+        # Skip if widgets don't exist or game isn't in history
+        if not hasattr(self, 'preview_title') or not self.preview_title.winfo_exists():
+            return
+            
+        if (game_id not in self.history_games):
             return
         
         self.selected_history_game = game_id
@@ -638,30 +697,35 @@ class TicTacToeApp:
             move_tracker = game['move_tracker']
             final_board = move_tracker.current_board
         
-        # Update preview title
-        winner = game.get('winner')
-        if winner in [1, 2]:
-            winner_symbol = "X" if winner == 1 else "O"
-            winner_color = self.player_colors[winner]["fg"]
-            self.preview_title.configure(
-                text=f"Game: {date_display[:10]}\nWinner: {winner_symbol}",
-                text_color=winner_color
-            )
-        elif winner == 0:
-            self.preview_title.configure(
-                text=f"Game: {date_display[:10]}\nResult: Draw",
-                text_color="#FFC107"  # Yellow for draws
-            )
-        else:
-            self.preview_title.configure(
-                text=f"Game: {date_display[:10]}\nIncomplete",
-                text_color="#AAAAAA"
-            )
+        # Update preview title if widget exists
+        if hasattr(self, 'preview_title') and self.preview_title.winfo_exists():
+            winner = game.get('winner')
+            if winner in [1, 2]:
+                winner_symbol = "X" if winner == 1 else "O"
+                winner_color = self.player_colors[winner]["fg"]
+                self.preview_title.configure(
+                    text=f"Game: {date_display[:10]}\nWinner: {winner_symbol}",
+                    text_color=winner_color
+                )
+            elif winner == 0:
+                self.preview_title.configure(
+                    text=f"Game: {date_display[:10]}\nResult: Draw",
+                    text_color="#FFC107"  # Yellow for draws
+                )
+            else:
+                self.preview_title.configure(
+                    text=f"Game: {date_display[:10]}\nIncomplete",
+                    text_color="#AAAAAA"
+                )
         
-        # Update mini board
-        if final_board is not None:
+        # Update mini board if board exists and widgets exist
+        if final_board is not None and hasattr(self, 'mini_cells'):
             for i in range(3):
                 for j in range(3):
+                    # Skip if the cell widget doesn't exist
+                    if not hasattr(self.mini_cells[i][j], 'winfo_exists') or not self.mini_cells[i][j].winfo_exists():
+                        continue
+                        
                     cell_value = final_board[i, j]
                     
                     if cell_value == 0:
@@ -681,15 +745,16 @@ class TicTacToeApp:
                             fg_color=player_colors["bg"],
                             text_color=player_colors["fg"]
                         )
-        else:
-            # Clear the board if no final state
+        elif hasattr(self, 'mini_cells'):
+            # Clear the board if no final state and cells exist
             for i in range(3):
                 for j in range(3):
-                    self.mini_cells[i][j].configure(
-                        text="",
-                        fg_color="#383838",
-                        text_color="#FFFFFF"
-                    )
+                    if hasattr(self.mini_cells[i][j], 'winfo_exists') and self.mini_cells[i][j].winfo_exists():
+                        self.mini_cells[i][j].configure(
+                            text="",
+                            fg_color="#383838",
+                            text_color="#FFFFFF"
+                        )
     
     # Add a method to show game history
     def show_game_history(self):
@@ -724,6 +789,51 @@ class TicTacToeApp:
         
         # Launch training window
         training_window = AITrainingWindow(self.root, callback_on_complete=on_training_complete)
+    
+    @ThreadedTaskManager.ui_safe
+    def _update_status_display(self, message, color="#EEEEEE"):
+        """Update the status display with a message (safe for any thread)"""
+        if hasattr(self, 'status_label'):
+            self.status_label.configure(text=message, text_color=color)
+    
+    def ai_move(self):
+        """Get and make AI move"""
+        # Disable board during AI thinking
+        self._set_board_enabled(False)
+        self._update_status_display("AI is thinking...", "#FFC107")
+        
+        # Run AI move calculation in background thread
+        def calculate_ai_move():
+            if not self.ai:
+                return None, None
+            time.sleep(0.5)  # Add small delay to show thinking
+            return self.ai.get_move(self.game.board)
+        
+        # Callback when AI move is calculated (runs on main thread)
+        def on_ai_move_ready(move):
+            row, col = move
+            if row is not None and col is not None:
+                # Make the move
+                if self.game.make_move(row, col):
+                    # Update the board UI
+                    self._update_board()
+                    
+                    # Check for win
+                    if self.game.check_win():
+                        self.show_win_animation(self.game.winner)
+                    elif self.game.is_board_full():
+                        self.show_win_animation(0)  # Draw
+                    else:
+                        # Continue with human player
+                        self._update_status_display(f"Player X's turn", self.player_colors[1]["fg"])
+                        self._set_board_enabled(True)
+            else:
+                # AI couldn't make a move
+                self._update_status_display("AI couldn't make a move", "#E63946")
+                self._set_board_enabled(True)
+        
+        # Run in background
+        run_in_background(calculate_ai_move, on_ai_move_ready)
     
     def make_move(self, row, col):
         """Handle a player's move at the given row and column"""
@@ -957,3 +1067,15 @@ class TicTacToeApp:
         # If against AI and AI goes first (which it doesn't in our setup)
         if self.mode.get() == "human_vs_ai" and self.game.current_player == 2:
             self.root.after(800, self.ai_move)
+    
+    def on_closing(self):
+        """Handle application shutdown properly"""
+        # Set the closing flag to prevent UI updates from background threads
+        self.is_closing = True
+        
+        # Cancel any pending background tasks
+        from threaded_task_manager import task_manager
+        task_manager.shutdown()
+        
+        # Close the window
+        self.root.destroy()

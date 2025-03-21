@@ -5,6 +5,7 @@ import numpy as np
 import os
 import datetime
 import json
+import types  # Add missing import for MethodType
 from game import TicTacToeGame
 from move_tracker import GameMoveTracker, MoveList, MoveNode
 
@@ -22,6 +23,9 @@ class GameHistoryViewer:
         self.window.title("Game History Viewer")
         self.window.geometry("800x600")
         self.window.configure(fg_color="#1E1E1E")
+        
+        # Store after ids for cleanup
+        self.after_ids = []
         
         # Game data
         self.games = {}
@@ -46,6 +50,9 @@ class GameHistoryViewer:
         self.playback_speed = 1.0  # seconds between moves
         self.playback_job = None
         self.previous_move_pos = None  # Track previous move position
+        
+        # Set window close handler
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
         
         self.setup_ui()
         self.load_games()
@@ -72,7 +79,7 @@ class GameHistoryViewer:
         separator = ctk.CTkFrame(self.main_frame, height=2, fg_color="#3E92CC")
         separator.pack(fill=tk.X, padx=50, pady=(2, 15))
         
-        # Split into two panels (games list and game details)
+        # Split into two panels with proper weight distribution
         content_frame = ctk.CTkFrame(self.main_frame, fg_color="transparent")
         content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
@@ -89,8 +96,12 @@ class GameHistoryViewer:
         )
         games_header.pack(pady=(10, 5))
         
-        # Games list
-        self.games_list_frame = ctk.CTkScrollableFrame(left_panel, fg_color="transparent")
+        # Games list - ensure it gets enough space
+        self.games_list_frame = ctk.CTkScrollableFrame(
+            left_panel, 
+            fg_color="transparent",
+            height=400  # Set a minimum height
+        )
         self.games_list_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         refresh_btn = ctk.CTkButton(
@@ -105,13 +116,14 @@ class GameHistoryViewer:
         )
         refresh_btn.pack(pady=(5, 15), padx=10, fill=tk.X)
         
-        # Right panel - Game details
+        # Right panel - Game details (expanded)
         right_panel = ctk.CTkFrame(content_frame, fg_color="transparent")
         right_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         
-        # Game info section
-        game_info_frame = ctk.CTkFrame(right_panel, fg_color="#2A2A2A", corner_radius=10)
+        # Game info section with improved spacing
+        game_info_frame = ctk.CTkFrame(right_panel, fg_color="#2A2A2A", corner_radius=10, height=80)
         game_info_frame.pack(fill=tk.X, pady=(0, 10))
+        game_info_frame.pack_propagate(False)  # Maintain fixed height
         
         self.game_info_label = ctk.CTkLabel(
             game_info_frame,
@@ -119,34 +131,36 @@ class GameHistoryViewer:
             font=ctk.CTkFont(size=14),
             text_color="#CCCCCC"
         )
-        self.game_info_label.pack(pady=10)
+        self.game_info_label.pack(pady=15)
         
-        # Game board
+        # Game board with proper sizing
         board_frame = ctk.CTkFrame(right_panel, fg_color="#2A2A2A", corner_radius=10)
         board_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Center the board display and make it responsive to window size
         self.board_display = ctk.CTkFrame(board_frame, fg_color="transparent")
         self.board_display.pack(expand=True, pady=20, padx=20)
         
+        # Create larger cells for better visibility
         self.cells = [[None for _ in range(3)] for _ in range(3)]
         
         for i in range(3):
             for j in range(3):
                 cell = ctk.CTkButton(
                     self.board_display, 
-                    text="",  # Start with empty text
-                    width=80,
-                    height=80,
-                    font=ctk.CTkFont(size=36, weight="bold"),
+                    text="",
+                    width=90,  # Larger cell size
+                    height=90,  # Larger cell size
+                    font=ctk.CTkFont(size=42, weight="bold"),  # Larger font
                     fg_color="#383838",
                     text_color="#FFFFFF",
                     corner_radius=5,
-                    state="disabled"  # All cells are disabled in viewer mode
+                    state="disabled"
                 )
-                cell.grid(row=i, column=j, padx=5, pady=5)
+                cell.grid(row=i, column=j, padx=6, pady=6)  # Increased spacing between cells
                 self.cells[i][j] = cell
         
-        # Add move info label below the board
+        # Add move info label below the board with better spacing
         self.move_info_label = ctk.CTkLabel(
             board_frame,
             text="",
@@ -154,92 +168,99 @@ class GameHistoryViewer:
             text_color="#EEEEEE",
             height=30
         )
-        self.move_info_label.pack(pady=(5, 10))
+        self.move_info_label.pack(pady=(10, 15))  # Increased vertical spacing
         
-        # Move navigation controls
-        controls_frame = ctk.CTkFrame(right_panel, fg_color="#2A2A2A", corner_radius=10, height=60)
+        # Move navigation controls with improved layout
+        controls_frame = ctk.CTkFrame(right_panel, fg_color="#2A2A2A", corner_radius=10, height=75)
         controls_frame.pack(fill=tk.X, pady=(10, 0))
+        controls_frame.pack_propagate(False)  # Maintain fixed height
         
         nav_frame = ctk.CTkFrame(controls_frame, fg_color="transparent")
-        nav_frame.pack(pady=10, padx=20, fill=tk.X)
+        nav_frame.pack(pady=15, padx=20, fill=tk.X)
         
-        # First move button
+        # First move button with more spacing
         self.first_move_btn = ctk.CTkButton(
             nav_frame,
             text="⏮",  # First move icon
             command=self.show_first_move,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=16),  # Larger font
             fg_color="#3E92CC",
             hover_color="#2D7DB3",
-            width=40
+            width=45,  # Wider button
+            height=40  # Taller button
         )
-        self.first_move_btn.pack(side=tk.LEFT, padx=(0, 5))
+        self.first_move_btn.pack(side=tk.LEFT, padx=(0, 6))
         
         # Previous move button
         self.prev_move_btn = ctk.CTkButton(
             nav_frame,
             text="◀",
             command=self.show_previous_move,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=16),  # Larger font
             fg_color="#3E92CC",
             hover_color="#2D7DB3",
-            width=40
+            width=45,  # Wider button
+            height=40  # Taller button
         )
-        self.prev_move_btn.pack(side=tk.LEFT, padx=5)
+        self.prev_move_btn.pack(side=tk.LEFT, padx=6)
         
-        # Play/Pause button
+        # Play/Pause button (larger and more prominent)
         self.play_btn = ctk.CTkButton(
             nav_frame,
             text="▶",  # Play icon
             command=self.toggle_playback,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=16),  # Larger font
             fg_color="#4CAF50",
             hover_color="#3E8E41",
-            width=40
+            width=50,  # Wider button
+            height=40  # Taller button
         )
-        self.play_btn.pack(side=tk.LEFT, padx=5)
+        self.play_btn.pack(side=tk.LEFT, padx=6)
         
         # Next move button
         self.next_move_btn = ctk.CTkButton(
             nav_frame,
             text="▶",
             command=self.show_next_move,
-            font=ctk.CTkFont(size=14),
+            font=ctk.CTkFont(size=16),  # Larger font
             fg_color="#3E92CC",
             hover_color="#2D7DB3",
-            width=40
+            width=45,  # Wider button
+            height=40  # Taller button
         )
-        self.next_move_btn.pack(side=tk.LEFT, padx=5)
+        self.next_move_btn.pack(side=tk.LEFT, padx=6)
         
         # Last move button
         self.last_move_btn = ctk.CTkButton(
             nav_frame,
             text="⏭",  # Last move icon
             command=self.show_last_move,
-            font=ctk.CTkFont(size=14),
             fg_color="#3E92CC",
             hover_color="#2D7DB3",
-            width=40
+            width=45,  # Wider button
+            height=40  # Taller button
         )
-        self.last_move_btn.pack(side=tk.LEFT, padx=5)
+        self.last_move_btn.pack(side=tk.LEFT, padx=6)
         
+        # Move label with more space
         self.move_label = ctk.CTkLabel(
             nav_frame,
             text="Move: 0/0",
             font=ctk.CTkFont(size=14, weight="bold"),
             width=100
         )
-        self.move_label.pack(side=tk.LEFT, padx=10)
+        self.move_label.pack(side=tk.LEFT, padx=15)
         
-        # Playback speed control
+        # Playback speed control with better alignment
         speed_frame = ctk.CTkFrame(controls_frame, fg_color="transparent")
-        speed_frame.pack(pady=(0, 10), padx=20, fill=tk.X)
+        speed_frame.pack(pady=(0, 15), padx=20, fill=tk.X)
         
         speed_label = ctk.CTkLabel(
             speed_frame,
             text="Playback Speed:",
             font=ctk.CTkFont(size=12),
-            width=100
+            width=100,
+            anchor="w"
         )
         speed_label.pack(side=tk.LEFT, padx=(0, 5))
         
@@ -250,7 +271,7 @@ class GameHistoryViewer:
             from_=0.5,
             to=3.0,
             variable=self.speed_var,
-            width=150
+            width=200  # Wider slider
         )
         speed_slider.pack(side=tk.LEFT, padx=5)
         
@@ -346,7 +367,7 @@ class GameHistoryViewer:
         self.loading_thread.start()
         
         # Start checking for completion
-        self.window.after(100, self._check_loading_complete)
+        self.schedule_after(100, self._check_loading_complete)
 
     def _load_games_async(self):
         """Load game data in background thread with move tracker integration"""
@@ -618,7 +639,7 @@ class GameHistoryViewer:
             
         else:
             # Still loading, check again after a delay
-            self.window.after(100, self._check_loading_complete)
+            self.schedule_after(100, self._check_loading_complete)
 
     def cancel_loading(self):
         """Cancel the current loading operation"""
@@ -630,7 +651,7 @@ class GameHistoryViewer:
             self.is_loading = False
             
             # Clear loading UI after a short delay
-            self.window.after(500, lambda: self._reset_after_cancel())
+            self.schedule_after(500, lambda: self._reset_after_cancel())
 
     def _reset_after_cancel(self):
         """Reset UI after canceling load operation"""
@@ -844,7 +865,7 @@ class GameHistoryViewer:
                 except Exception as e:
                     print(f"Error making debug window modal: {e}")
             
-            debug_window.after(100, make_modal)
+            self.schedule_after(100, make_modal)
             debug_window.transient(self.window)
             return
 
@@ -1030,7 +1051,7 @@ class GameHistoryViewer:
                 print(f"Could not set grab on retry: {e}")
         
         # Schedule making it modal
-        debug_window.after(100, make_modal)
+        self.schedule_after(100, make_modal)
         
         # Make sure other windows won't interfere
         debug_window.transient(self.window)
@@ -1122,7 +1143,7 @@ class GameHistoryViewer:
                 pass
         
         # Schedule making it modal
-        raw_window.after(100, make_modal)
+        self.schedule_after(100, make_modal)
         
         # Make sure it stays above parent
         raw_window.transient(self.window)
@@ -1168,42 +1189,98 @@ class GameHistoryViewer:
                 self.update_game_display()
     
     def show_next_move(self):
-        """Show the next move in the selected game using move tracker linked list"""
-        if not self.selected_game_id:
+        """Show the next move in the current game with widget existence checks"""
+        # Check if window and game still exist
+        if not hasattr(self, 'window') or not self.window.winfo_exists():
             return
             
-        game = self.games.get(self.selected_game_id)
-        if not game:
+        if not self.selected_game_id or self.selected_game_id not in self.games:
             return
-        
-        # Use move tracker if available
-        if 'move_tracker' in game:
-            move_tracker = game['move_tracker']
-            total_moves = move_tracker.all_moves.length
-            
-            if self.selected_move < total_moves:
-                # If at beginning, set current to head
-                if self.selected_move == 0:
-                    move_tracker.all_moves.goto_start()
-                    node = move_tracker.all_moves.current
-                else:
-                    # Otherwise advance to next
-                    node = move_tracker.all_moves.next_move()
                 
-                if node:
-                    self.selected_move += 1
-                    self.current_board = node.board_state.copy()
-                    self.previous_move_pos = (node.row, node.col)
+        game = self.games[self.selected_game_id]
+        moves = game.get('moves', [])
+        
+        if not moves or self.selected_move >= len(moves) - 1:
+            return  # Already at last move
+        
+        # Move to next move
+        self.selected_move += 1
+        
+        # Update board and move display
+        self.update_board_display()
+        
+        # Call update_move_info with explicit try-except to handle missing method
+        try:
+            self.update_move_info(self.selected_move)
+        except AttributeError:
+            print("Missing update_move_info method - implementing default version")
+            self._implement_missing_update_move_info()
+            # Now try again with our implementation
+            self.update_move_info(self.selected_move)
+        
+        # Enable/disable navigation buttons
+        self.update_ui_state()
+
+    def _implement_missing_update_move_info(self):
+        """Create a fallback implementation if update_move_info is missing"""
+        def update_move_info(self, move_index):
+            """Update the move information display
+            
+            Args:
+                move_index (int): Index of the current move
+            """
+            if not self.selected_game_id or self.selected_game_id not in self.games:
+                return
                     
-                    # Update display
-                    self.update_board_display()
-                    self.update_move_info(self.selected_move)
-        else:
-            # Fall back to legacy approach
-            if self.selected_move < len(game.get('moves', [])):
-                self.selected_move += 1
-                self.update_game_display()
-    
+            game = self.games[self.selected_game_id]
+            moves = game.get('moves', [])
+            
+            if not moves or move_index < 0 or move_index >= len(moves):
+                return
+                    
+            # Get current move
+            move = moves[move_index]
+            
+            # Get player and position
+            player = move.get('player', 0)
+            row = move.get('row', -1)
+            col = move.get('col', -1)
+            move_num = move.get('move_number', move_index + 1)
+            
+            # Define player symbols and colors if not already defined
+            if not hasattr(self, 'player_symbols'):
+                self.player_symbols = {1: "X", 2: "O", 0: ""}
+                
+            if not hasattr(self, 'player_colors'):
+                self.player_colors = {
+                    1: {"fg": "#4F85CC", "bg": "#2D5F8B"},  # X: Blue
+                    2: {"fg": "#FF5C8D", "bg": "#8B2D5F"}   # O: Pink
+                }
+            
+            # Update move info text
+            player_symbol = self.player_symbols.get(player, "?")
+            player_color = self.player_colors.get(player, {}).get("fg", "#FFFFFF")
+            
+            # Format move info text
+            info_text = f"Move #{move_num}: Player {player_symbol} placed at ({row+1},{col+1})"
+            
+            # Check if we have a move info label
+            if hasattr(self, 'move_info_label') and self.move_info_label.winfo_exists():
+                self.move_info_label.configure(text=info_text, text_color=player_color)
+            
+            # If move info label doesn't exist yet, create it if we have a move panel
+            elif hasattr(self, 'move_panel') and self.move_panel.winfo_exists():
+                self.move_info_label = ctk.CTkLabel(
+                    self.move_panel,
+                    text=info_text,
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color=player_color
+                )
+                self.move_info_label.pack(pady=5)
+        
+        # Attach the method to the instance
+        self.update_move_info = types.MethodType(update_move_info, self)
+
     def update_game_display(self):
         """Update the display for the current move in the selected game"""
         if not self.selected_game_id:
@@ -1367,7 +1444,7 @@ class GameHistoryViewer:
             # Schedule next move if not at the end
             if self.selected_move < len(game['moves']):
                 delay_ms = int(self.playback_speed * 1000)
-                self.playback_job = self.window.after(delay_ms, self.advance_playback)
+                self.playback_job = self.schedule_after(delay_ms, self.advance_playback)
             else:
                 # End of game, stop playback
                 self.stop_playback()
@@ -1378,7 +1455,7 @@ class GameHistoryViewer:
     def stop_playback(self):
         """Stop automatic playback"""
         if self.playback_job:
-            self.window.after_cancel(self.playback_job)
+            self.cancel_after(self.playback_job)
             self.playback_job = None
         
         self.is_playing = False
@@ -1456,11 +1533,33 @@ class GameHistoryViewer:
             self.update_move_info(self.selected_move)
 
     def on_closing(self):
-        """Handle window closing event"""
-        # Stop any ongoing playback
-        self.stop_playback()
-        self.window.destroy()
-    
+        """Handle window closing"""
+        try:
+            # Stop any ongoing processes
+            self.cancel_loading()
+            
+            # Cancel all scheduled after callbacks
+            for after_id in list(self.after_ids):
+                self.cancel_after(after_id)
+            
+            # Make sure animations are stopped
+            if hasattr(self, 'is_playing'):
+                self.is_playing = False
+            
+            # Explicitly destroy window
+            if hasattr(self, 'window') and self.window is not None:
+                self.window.destroy()
+                self.window = None  # Set to None to indicate it's closed
+        except Exception as e:
+            print(f"Error during viewer cleanup: {e}")
+            # Force destroy as last resort
+            try:
+                if hasattr(self, 'window') and self.window is not None:
+                    self.window.destroy()
+                    self.window = None
+            except:
+                pass
+
     def run(self):
         """Run the viewer as a standalone application"""
         self.window.mainloop()
@@ -1508,9 +1607,9 @@ class GameHistoryViewer:
             font=ctk.CTkFont(size=12),
             text_color="#AAAAAA"
         )
-        stats_label.pack(anchor=tk.W, padx=10, pady=(5, 0))
+        stats_label.pack(anchor=tk.W, padx=10, pady=(5, 8))  # Better spacing
         
-        # Display games for current page
+        # Display games for current page with improved spacing and layout
         displayed_count = 0
         for game_id in current_game_ids:
             game = self.games[game_id]
@@ -1521,42 +1620,33 @@ class GameHistoryViewer:
                 
             # Format date from game_id or timestamp
             try:
-                if game.get('timestamp') and isinstance(game['timestamp'], str):
-                    # Try to parse a standardized timestamp format
-                    date_parts = game['timestamp'].split()
-                    if len(date_parts) >= 2:
-                        date_display = f"{date_parts[0]} {date_parts[1]}"
-                    else:
-                        date_display = game['timestamp']
-                else:
-                    # Fall back to parsing from game_id
-                    date_str = f"{game_id[:4]}-{game_id[4:6]}-{game_id[6:8]}"
-                    time_str = f"{game_id[9:11]}:{game_id[11:13]}:{game_id[13:15]}"
-                    date_display = f"{date_str} {time_str}"
+                date_str = f"{game_id[:4]}-{game_id[4:6]}-{game_id[6:8]}"
+                time_str = f"{game_id[9:11]}:{game_id[11:13]}"
+                date_display = f"{date_str} {time_str}"
             except Exception as e:
-                print(f"Error formatting date for game {game_id}: {e}")
-                date_display = game_id
+                date_display = game_id[:15] + "..."
             
             # Get winner info and move count
             winner = game.get('winner')
             moves_count = len(game.get('moves', []))
             
             if winner in [1, 2]:
-                winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})"
-                text_color = self.player_colors[winner]["fg"]
+                winner_symbol = "X" if winner == 1 else "O"
+                winner_color = self.player_colors[winner]["fg"]
+                winner_text = f"Winner: {winner_symbol}"
             elif winner == 0:
                 winner_text = "Draw"
-                text_color = "#FFC107"  # Yellow for draw
+                winner_color = "#FFC107"  # Yellow for draws
             else:
-                winner_text = "Incomplete" if moves_count > 0 else "Invalid Game"
-                text_color = "#CCCCCC"  # Gray for incomplete
+                winner_text = "Incomplete"
+                winner_color = "#AAAAAA"  # Gray for incomplete
             
-            # Create game entry with optimized rendering
+            # Create game entry with improved height and spacing
             game_frame = ctk.CTkFrame(
                 self.games_list_frame, 
                 fg_color="#383838",
                 corner_radius=5,
-                height=70
+                height=75  # Taller for better readability
             )
             game_frame.pack(fill=tk.X, pady=5, padx=5)
             game_frame.pack_propagate(False)  # Maintain height
@@ -1568,16 +1658,16 @@ class GameHistoryViewer:
                 font=ctk.CTkFont(size=12, weight="bold"),
                 text_color="#AAAAAA"
             )
-            id_label.pack(anchor=tk.W, padx=10, pady=(10, 0))
+            id_label.pack(anchor=tk.W, padx=10, pady=(12, 2))  # Better vertical spacing
             
             # Winner label with appropriate color
             winner_label = ctk.CTkLabel(
                 game_frame,
                 text=winner_text,
                 font=ctk.CTkFont(size=14),
-                text_color=text_color
+                text_color=winner_color
             )
-            winner_label.pack(anchor=tk.W, padx=10, pady=(0, 5))
+            winner_label.pack(anchor=tk.W, padx=10, pady=(2, 12))  # Better vertical spacing
             
             # Make the entire frame clickable
             game_frame.bind("<Button-1>", lambda e, gid=game_id: self.select_game(gid))
@@ -1594,7 +1684,7 @@ class GameHistoryViewer:
                 font=ctk.CTkFont(size=14),
                 text_color="#CCCCCC"
             )
-            no_games_label.pack(pady=10)
+            no_games_label.pack(pady=20)
         
         # Add pagination controls
         self._add_pagination_controls()
@@ -1736,6 +1826,33 @@ class GameHistoryViewer:
             checkbox_height=18
         )
         filter_check.pack(side=tk.LEFT, padx=5, pady=5)
+
+    def schedule_after(self, delay, callback):
+        """Schedule an after callback and track its ID
+        
+        Args:
+            delay: Delay in milliseconds
+            callback: Function to call
+            
+        Returns:
+            The after ID
+        """
+        after_id = self.window.after(delay, callback)
+        self.after_ids.append(after_id)
+        return after_id
+
+    def cancel_after(self, after_id):
+        """Cancel an after callback
+        
+        Args:
+            after_id: ID of callback to cancel
+        """
+        if after_id in self.after_ids:
+            try:
+                self.window.after_cancel(after_id)
+                self.after_ids.remove(after_id)
+            except Exception:
+                pass
 
 # Allow running this module directly
 if __name__ == "__main__":

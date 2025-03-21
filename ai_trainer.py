@@ -106,13 +106,13 @@ class AITrainingWindow:
         separator = ctk.CTkFrame(self.main_frame, height=2, fg_color="#3E92CC")
         separator.pack(fill=tk.X, padx=30, pady=(0, 15))
         
-        # Options frame
+        # Options frame with better spacing
         options_frame = ctk.CTkFrame(self.main_frame, fg_color="#2A2A2A", corner_radius=10)
         options_frame.pack(fill=tk.X, padx=15, pady=10)
         
-        # Number of games option
+        # Number of games option - improved alignment
         games_frame = ctk.CTkFrame(options_frame, fg_color="transparent")
-        games_frame.pack(fill=tk.X, padx=15, pady=(15, 5))
+        games_frame.pack(fill=tk.X, padx=15, pady=(15, 10))  # Increased vertical spacing
         
         games_label = ctk.CTkLabel(
             games_frame,
@@ -125,16 +125,16 @@ class AITrainingWindow:
         
         self.games_entry = ctk.CTkEntry(
             games_frame,
-            width=80,
+            width=100,  # Wider entry field
             font=ctk.CTkFont(size=14),
             justify="center"
         )
         self.games_entry.pack(side=tk.LEFT)
         self.games_entry.insert(0, str(self.training_params["num_games"]))
         
-        # Visualization option
+        # Visualization option with better spacing
         visual_frame = ctk.CTkFrame(options_frame, fg_color="transparent")
-        visual_frame.pack(fill=tk.X, padx=15, pady=5)
+        visual_frame.pack(fill=tk.X, padx=15, pady=10)  # Increased vertical spacing
         
         visual_label = ctk.CTkLabel(
             visual_frame,
@@ -154,13 +154,14 @@ class AITrainingWindow:
             offvalue=False,
             button_color="#3E92CC",
             button_hover_color="#2D7DB3",
-            progress_color="#4CAF50"
+            progress_color="#4CAF50",
+            width=50  # Making switch wider
         )
         visual_switch.pack(side=tk.LEFT)
         
-        # Simulation speed (only when visualization is on)
+        # Simulation speed with better spacing
         speed_frame = ctk.CTkFrame(options_frame, fg_color="transparent")
-        speed_frame.pack(fill=tk.X, padx=15, pady=5)
+        speed_frame.pack(fill=tk.X, padx=15, pady=(10, 15))  # Increased vertical spacing
         
         speed_label = ctk.CTkLabel(
             speed_frame,
@@ -176,7 +177,7 @@ class AITrainingWindow:
             from_=0.5,
             to=10.0,
             variable=self.simulation_speed,
-            width=150,
+            width=180,  # Wider slider
             progress_color="#3E92CC",
             button_color="#2D7DB3"
         )
@@ -186,7 +187,7 @@ class AITrainingWindow:
             speed_frame,
             text=f"{self.simulation_speed.get()}x",
             font=ctk.CTkFont(size=12),
-            width=30
+            width=40
         )
         speed_value.pack(side=tk.LEFT, padx=10)
         
@@ -196,14 +197,16 @@ class AITrainingWindow:
         
         self.simulation_speed.trace_add("write", update_speed_label)
         
-        # Create a frame for the simulation visualization
-        self.simulation_frame = ctk.CTkFrame(self.main_frame, fg_color="#2A2A2A", corner_radius=10)
-        self.simulation_frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=10)
+        # Create a frame for the simulation visualization with proper height
+        self.simulation_frame = ctk.CTkFrame(self.main_frame, fg_color="#2A2A2A", corner_radius=10, height=220)
+        self.simulation_frame.pack(fill=tk.X, padx=15, pady=10)
+        self.simulation_frame.pack_propagate(False)  # Maintain fixed height
         
-        # Create board display
+        # Create board display - better centering
         self.board_display_frame = ctk.CTkFrame(self.simulation_frame, fg_color="transparent")
         self.board_display_frame.pack(expand=True, pady=15)
         
+        # Larger cells for better visibility
         self.cells = [[None for _ in range(3)] for _ in range(3)]
         
         for i in range(3):
@@ -211,18 +214,18 @@ class AITrainingWindow:
                 cell = ctk.CTkButton(
                     self.board_display_frame, 
                     text="",
-                    width=60,
-                    height=60,
-                    font=ctk.CTkFont(size=30, weight="bold"),
+                    width=65,  # Larger cells
+                    height=65,  # Larger cells
+                    font=ctk.CTkFont(size=32, weight="bold"),  # Larger font
                     fg_color="#383838",
                     text_color="#FFFFFF",
                     corner_radius=5,
                     state="disabled"  # Cells are non-interactive
                 )
-                cell.grid(row=i, column=j, padx=3, pady=3)
+                cell.grid(row=i, column=j, padx=5, pady=5)  # Increased cell spacing
                 self.cells[i][j] = cell
         
-        # Progress information
+        # Progress information with better spacing
         progress_frame = ctk.CTkFrame(self.main_frame, fg_color="#2A2A2A", corner_radius=10)
         progress_frame.pack(fill=tk.X, padx=15, pady=10)
         
@@ -232,17 +235,17 @@ class AITrainingWindow:
             font=ctk.CTkFont(size=14),
             text_color="#EEEEEE"
         )
-        self.status_label.pack(pady=5)
+        self.status_label.pack(pady=10)  # Increased padding
         
         self.progress_bar = ctk.CTkProgressBar(
             progress_frame,
             orientation="horizontal",
             mode="determinate",
             progress_color="#4CAF50",
-            height=15,
+            height=18,  # Taller progress bar
             corner_radius=5
         )
-        self.progress_bar.pack(fill=tk.X, padx=20, pady=10)
+        self.progress_bar.pack(fill=tk.X, padx=20, pady=(5, 15))  # Better spacing
         self.progress_bar.set(0)
         
         self.game_stats_label = ctk.CTkLabel(
@@ -251,17 +254,17 @@ class AITrainingWindow:
             font=ctk.CTkFont(size=12),
             text_color="#CCCCCC"
         )
-        self.game_stats_label.pack(pady=5)
+        self.game_stats_label.pack(pady=(0, 10))  # Adjusted padding
         
         # Button frame with strong visual appearance
         button_frame = ctk.CTkFrame(
             self.main_frame, 
-            fg_color="#3A3A3A",  # Lighter background for contrast
+            fg_color="#3A3A3A",
             corner_radius=10,
-            border_width=2,     # Add border
-            border_color="#4CAF50"  # Green border to highlight the section
+            border_width=2,
+            border_color="#4CAF50"
         )
-        button_frame.pack(fill=tk.X, padx=15, pady=(10, 15))
+        button_frame.pack(fill=tk.X, padx=15, pady=(15, 15))  # More vertical space
         
         # Clear section title to make it obvious
         section_label = ctk.CTkLabel(
@@ -270,24 +273,21 @@ class AITrainingWindow:
             font=ctk.CTkFont(size=16, weight="bold"),
             text_color="#FFFFFF"
         )
-        section_label.pack(pady=(15, 10))
+        section_label.pack(pady=(15, 15))  # Increased spacing
         
-        # Create buttons directly in the button frame (no nested container)
-        # Generate training data button - Large and bright
+        # Create buttons with better vertical spacing
         self.generate_btn = ctk.CTkButton(
             button_frame,
             text="1. Generate Training Data",
             command=self.start_training_simulation,
             font=ctk.CTkFont(size=16, weight="bold"),
-            fg_color="#4CAF50",  # Bright green
+            fg_color="#4CAF50",
             hover_color="#3E8E41",
             corner_radius=8,
-            height=45,  # Taller
-            width=300,  # Fixed width
-            border_width=1,  # Add border for better visibility
-            border_color="#FFFFFF"
+            height=50,  # Taller button
+            width=320  # Wider button
         )
-        self.generate_btn.pack(padx=20, pady=(0, 10))
+        self.generate_btn.pack(padx=20, pady=(0, 12))  # Increased bottom padding
         
         # Train AI Model button
         self.train_model_btn = ctk.CTkButton(
@@ -298,15 +298,13 @@ class AITrainingWindow:
             fg_color="#3E92CC",
             hover_color="#2D7DB3",
             corner_radius=8,
-            height=45,  # Taller
-            width=300,  # Fixed width
-            border_width=1,  # Add border
-            border_color="#FFFFFF",
+            height=50,  # Taller button
+            width=320,  # Wider button
             state="disabled"
         )
-        self.train_model_btn.pack(padx=20, pady=(0, 10))
+        self.train_model_btn.pack(padx=20, pady=(0, 12))  # Increased bottom padding
         
-        # Cancel button
+        # Cancel button with better spacing
         self.cancel_btn = ctk.CTkButton(
             button_frame,
             text="Cancel",
@@ -315,8 +313,8 @@ class AITrainingWindow:
             fg_color="#E63946",
             hover_color="#C5313E",
             corner_radius=8,
-            height=35,
-            width=300,  # Fixed width
+            height=40,
+            width=320
         )
         self.cancel_btn.pack(padx=20, pady=(0, 15))
         
