@@ -46,20 +46,28 @@ class AIPlayer:
         return self.model is not None
     
     def train_model(self, games=None):
-        """Train a new model on game data
+        """Train a new model on game data with move tracker support
         
         Args:
             games (dict, optional): Dictionary of games to train on.
-                If None, loads games from CSV.
+                If None, loads games from files.
                 
         Returns:
             bool: True if training was successful, False otherwise
         """
         try:
-            # Load games from CSV if not provided
+            # Load games if not provided
             if games is None:
-                games = TicTacToeGame.load_game_history_from_csv()
-                print(f"Loaded {len(games)} games from history")
+                # Try to use optimized data integration first
+                try:
+                    from game_data_integration import GameDataIntegration
+                    data_manager = GameDataIntegration(use_cache=True)
+                    games = data_manager.get_all_games()
+                    print(f"Loaded {len(games)} games from data integration")
+                except ImportError:
+                    # Fall back to direct loading
+                    games = TicTacToeGame.load_game_history_from_csv()
+                    print(f"Loaded {len(games)} games from history")
             
             if not games:
                 print("No games available for training")
@@ -89,50 +97,89 @@ class AIPlayer:
                     games_incomplete += 1
                     continue  # Skip games without clear outcome
                 
-                # Ensure moves exist and are properly sorted
-                if 'moves' not in game_data or not game_data['moves']:
-                    continue
+                # Check if game has move tracker
+                if 'move_tracker' in game_data:
+                    move_tracker = game_data['move_tracker']
                     
-                # Sort moves by move number to ensure correct sequence
-                moves = sorted(game_data['moves'], key=lambda x: x.get('move_number', 0))
-                
-                # Skip games with too few moves
-                if len(moves) < 5:  # Minimum moves for a completed game
-                    continue
+                    # Process moves from the tracker
+                    node = move_tracker.all_moves.head
                     
-                # Process each move in the game
-                for i, move in enumerate(moves):
-                    # Skip if missing necessary data
-                    if 'board' not in move or 'position' not in move:
-                        skipped_moves_count += 1
-                        continue
-                    
-                    # Skip final move in winning games (doesn't help with learning)
-                    if winner not in [None, 0] and i == len(moves) - 1:
-                        skipped_moves_count += 1
-                        continue
-                    
-                    # Skip move if board is in terminal state
-                    if self._is_terminal_state(move['board']):
-                        skipped_moves_count += 1
-                        continue
-                    
-                    # Normalize and flatten board state
-                    board_flat = self._preprocess_board(move['board'])
-                    
-                    # Create one-hot encoded move position
-                    move_pos = np.zeros(9)
-                    position = move['position']
-                    idx = position[0] * 3 + position[1]
-                    if 0 <= idx < 9:  # Validate index
-                        move_pos[idx] = 1
+                    while node:
+                        # Skip final move in winning games (doesn't help with learning)
+                        if winner not in [None, 0] and node.next is None:
+                            skipped_moves_count += 1
+                            node = node.next
+                            continue
                         
-                        # Add to training data
-                        X.append(board_flat)
-                        y.append(move_pos)
-                        valid_moves_count += 1
-                    else:
-                        skipped_moves_count += 1
+                        # Skip move if board is in terminal state
+                        if self._is_terminal_state(node.board_state):
+                            skipped_moves_count += 1
+                            node = node.next
+                            continue
+                        
+                        # Normalize and flatten board state
+                        board_flat = self._preprocess_board(node.board_state)
+                        
+                        # Create one-hot encoded move position
+                        move_pos = np.zeros(9)
+                        idx = node.cell_index
+                        if 0 <= idx < 9:  # Validate index
+                            move_pos[idx] = 1
+                            
+                            # Add to training data
+                            X.append(board_flat)
+                            y.append(move_pos)
+                            valid_moves_count += 1
+                        else:
+                            skipped_moves_count += 1
+                        
+                        node = node.next
+                else:
+                    # Fall back to legacy format
+                    # Ensure moves exist and are properly sorted
+                    if 'moves' not in game_data or not game_data['moves']:
+                        continue
+                        
+                    # Sort moves by move number to ensure correct sequence
+                    moves = sorted(game_data['moves'], key=lambda x: x.get('move_number', 0))
+                    
+                    # Skip games with too few moves
+                    if len(moves) < 5:  # Minimum moves for a completed game
+                        continue
+                        
+                    # Process each move in the game
+                    for i, move in enumerate(moves):
+                        # Skip if missing necessary data
+                        if 'board' not in move or 'position' not in move:
+                            skipped_moves_count += 1
+                            continue
+                        
+                        # Skip final move in winning games (doesn't help with learning)
+                        if winner not in [None, 0] and i == len(moves) - 1:
+                            skipped_moves_count += 1
+                            continue
+                        
+                        # Skip move if board is in terminal state
+                        if self._is_terminal_state(move['board']):
+                            skipped_moves_count += 1
+                            continue
+                        
+                        # Normalize and flatten board state
+                        board_flat = self._preprocess_board(move['board'])
+                        
+                        # Create one-hot encoded move position
+                        move_pos = np.zeros(9)
+                        position = move['position']
+                        idx = position[0] * 3 + position[1]
+                        if 0 <= idx < 9:  # Validate index
+                            move_pos[idx] = 1
+                            
+                            # Add to training data
+                            X.append(board_flat)
+                            y.append(move_pos)
+                            valid_moves_count += 1
+                        else:
+                            skipped_moves_count += 1
             
             # Print debug information
             print(f"Training statistics:")

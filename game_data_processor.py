@@ -56,7 +56,7 @@ class GameDataProcessor:
             self.load_data()
     
     def load_data(self, validate=True):
-        """Load game data from CSV file
+        """Load game data from CSV file and JSON files with move tracker support
         
         Args:
             validate (bool): Whether to validate the loaded data
@@ -70,118 +70,200 @@ class GameDataProcessor:
         self._reset_data_structures()
         
         try:
-            # Check if file exists and has content
-            if not os.path.exists(self.csv_path):
-                print(f"CSV file not found: {self.csv_path}")
-                return self.games
-            
-            file_size = os.path.getsize(self.csv_path)
-            if file_size == 0:
-                print(f"CSV file is empty: {self.csv_path}")
-                return self.games
+            # First try loading JSON files which contain move tracker data
+            json_dir = os.path.join(self.data_dir, "game_json")
+            if os.path.exists(json_dir):
+                print(f"Found JSON directory at {json_dir}")
+                json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
+                print(f"Found {len(json_files)} JSON game files")
                 
-            # Using pandas for more robust CSV handling
-            df = pd.read_csv(self.csv_path)
-            
-            # Check for required columns
-            required_columns = ['game_id', 'move_number', 'player', 'row', 'col', 'board_state']
-            missing_columns = [col for col in required_columns if col not in df.columns]
-            
-            if missing_columns:
-                print(f"CSV file missing required columns: {missing_columns}")
-                return self.games
-            
-            # Group data by game_id
-            game_groups = df.groupby('game_id')
-            
-            # Process each game
-            for game_id, game_df in game_groups:
-                try:
-                    # Sort moves by move_number
-                    game_df = game_df.sort_values('move_number')
-                    
-                    # Check for valid number of moves
-                    if len(game_df) < 1 or len(game_df) > 9:
-                        print(f"Warning: Game {game_id} has {len(game_df)} moves, expected 1-9")
-                    
-                    # Process moves
-                    moves = []
-                    for _, row in game_df.iterrows():
+                if json_files:
+                    # Import move tracker if not already imported
+                    if not hasattr(self, 'move_tracker_imported'):
                         try:
-                            # Convert data types
-                            move_number = int(row['move_number'])
-                            player = int(row['player'])
-                            row_idx = int(row['row'])
-                            col_idx = int(row['col'])
+                            from move_tracker import GameMoveTracker
+                            self.move_tracker_imported = True
+                        except ImportError:
+                            print("Move tracker module not found, skipping JSON loading")
+                            self.move_tracker_imported = False
+                    
+                    if hasattr(self, 'move_tracker_imported') and self.move_tracker_imported:
+                        # Process each JSON file
+                        for json_file in json_files:
+                            game_id = json_file.split('.')[0]
+                            json_path = os.path.join(json_dir, json_file)
                             
-                            # Skip invalid values
-                            if player not in [1, 2] or not (0 <= row_idx <= 2) or not (0 <= col_idx <= 2):
-                                print(f"Warning: Game {game_id}, move {move_number} has invalid values")
-                                self.stats['validation']['invalid_moves'] += 1
-                                continue
-                            
-                            # Parse board state
-                            board_state = str(row['board_state'])
-                            if len(board_state) != 9 or not all(c in '012' for c in board_state):
-                                print(f"Warning: Game {game_id}, move {move_number} has invalid board state")
-                                self.stats['validation']['invalid_boards'] += 1
-                                continue
+                            try:
+                                # Load game data from JSON
+                                with open(json_path, 'r') as f:
+                                    game_data = json.load(f)
                                 
-                            # Convert to numpy array
-                            board = np.array([int(c) for c in board_state]).reshape(3, 3)
-                            
-                            # Parse winner (may be empty)
-                            winner = None
-                            if 'winner' in row and row['winner'] and pd.notna(row['winner']):
-                                try:
-                                    winner = int(row['winner'])
-                                    if winner not in [0, 1, 2]:
-                                        winner = None
-                                except (ValueError, TypeError):
-                                    winner = None
-                            
-                            # Get timestamp if available
-                            timestamp = row.get('timestamp', None)
-                            if timestamp and pd.isna(timestamp):
-                                timestamp = None
-                            
-                            # Create move object
-                            move = {
-                                'move_number': move_number,
-                                'player': player,
-                                'position': (row_idx, col_idx),
-                                'board': board,
-                                'timestamp': timestamp,
-                                'winner': winner
-                            }
-                            
-                            moves.append(move)
-                            
-                        except Exception as e:
-                            print(f"Error processing move in game {game_id}: {e}")
-                            continue
-                    
-                    # Skip if no valid moves
-                    if not moves:
-                        print(f"Game {game_id} has no valid moves, skipping")
-                        continue
-                    
-                    # Create game object
-                    game = self._process_game_data(game_id, moves)
-                    
-                    # Store game
-                    self.games[game_id] = game
-                    
-                    # Categorize game
-                    self._categorize_game(game_id, game)
-                    
-                    # Store moves by player
-                    self._store_player_moves(game_id, moves)
-                    
-                except Exception as e:
-                    print(f"Error processing game {game_id}: {e}")
-                    continue
+                                # Extract moves data - this will contain move tracker info
+                                moves_data = game_data.get('moves', {})
+                                
+                                # Create a move tracker to restore the data
+                                move_tracker = GameMoveTracker()
+                                restored = move_tracker.restore_from_moves_data(moves_data)
+                                
+                                if restored:
+                                    # Get the final state for winner detection
+                                    final_board = move_tracker.current_board
+                                    
+                                    # Get the winner from JSON data
+                                    winner = game_data.get('winner')
+                                    
+                                    # If winner is not specified in JSON, determine from final board
+                                    if winner is None and final_board is not None:
+                                        winner = self._determine_winner(final_board)
+                                    
+                                    # Extract all moves for legacy compatibility
+                                    moves = []
+                                    all_move_data = moves_data.get('all_moves', [])
+                                    
+                                    for move_data in all_move_data:
+                                        board_state = move_data.get('board_state')
+                                        if board_state:
+                                            row = move_data.get('row')
+                                            col = move_data.get('col')
+                                            player = move_data.get('player')
+                                            move_number = move_data.get('move_number')
+                                            
+                                            # Convert board to numpy array
+                                            board = np.array(board_state)
+                                            
+                                            moves.append({
+                                                'move_number': move_number,
+                                                'player': player,
+                                                'position': (row, col),
+                                                'board': board,
+                                                'winner': winner if move_number == len(all_move_data) else None
+                                            })
+                                    
+                                    # Create game entry
+                                    self.games[game_id] = {
+                                        'game_id': game_id,
+                                        'moves': moves,
+                                        'winner': winner,
+                                        'move_count': len(moves),
+                                        'timestamp': game_data.get('timestamp'),
+                                        'move_tracker': move_tracker  # Store the move tracker for advanced operations
+                                    }
+                                    
+                                    # Categorize the game
+                                    self._categorize_game(game_id, self.games[game_id])
+                                    
+                                    # Store moves by player
+                                    self._store_player_moves(game_id, moves)
+                            except Exception as e:
+                                print(f"Error processing JSON game {game_id}: {e}")
+                                continue
             
+            # Check if we need to also load from CSV
+            if len(self.games) == 0 or not os.path.exists(json_dir):
+                print("No games loaded from JSON, trying CSV...")
+                # Fall back to CSV loading using pandas
+                # Using pandas for more robust CSV handling
+                df = pd.read_csv(self.csv_path)
+                
+                # Check for required columns
+                required_columns = ['game_id', 'move_number', 'player', 'row', 'col', 'board_state']
+                missing_columns = [col for col in required_columns if col not in df.columns]
+                
+                if missing_columns:
+                    print(f"CSV file missing required columns: {missing_columns}")
+                    return self.games
+                
+                # Group data by game_id
+                game_groups = df.groupby('game_id')
+                
+                # Process each game
+                for game_id, game_df in game_groups:
+                    try:
+                        # Sort moves by move_number
+                        game_df = game_df.sort_values('move_number')
+                        
+                        # Check for valid number of moves
+                        if len(game_df) < 1 or len(game_df) > 9:
+                            print(f"Warning: Game {game_id} has {len(game_df)} moves, expected 1-9")
+                        
+                        # Process moves
+                        moves = []
+                        for _, row in game_df.iterrows():
+                            try:
+                                # Convert data types
+                                move_number = int(row['move_number'])
+                                player = int(row['player'])
+                                row_idx = int(row['row'])
+                                col_idx = int(row['col'])
+                                
+                                # Skip invalid values
+                                if player not in [1, 2] or not (0 <= row_idx <= 2) or not (0 <= col_idx <= 2):
+                                    print(f"Warning: Game {game_id}, move {move_number} has invalid values")
+                                    self.stats['validation']['invalid_moves'] += 1
+                                    continue
+                                
+                                # Parse board state
+                                board_state = str(row['board_state'])
+                                if len(board_state) != 9 or not all(c in '012' for c in board_state):
+                                    print(f"Warning: Game {game_id}, move {move_number} has invalid board state")
+                                    self.stats['validation']['invalid_boards'] += 1
+                                    continue
+                                    
+                                # Convert to numpy array
+                                board = np.array([int(c) for c in board_state]).reshape(3, 3)
+                                
+                                # Parse winner (may be empty)
+                                winner = None
+                                if 'winner' in row and row['winner'] and pd.notna(row['winner']):
+                                    try:
+                                        winner = int(row['winner'])
+                                        if winner not in [0, 1, 2]:
+                                            winner = None
+                                    except (ValueError, TypeError):
+                                        winner = None
+                                
+                                # Get timestamp if available
+                                timestamp = row.get('timestamp', None)
+                                if timestamp and pd.isna(timestamp):
+                                    timestamp = None
+                                
+                                # Create move object
+                                move = {
+                                    'move_number': move_number,
+                                    'player': player,
+                                    'position': (row_idx, col_idx),
+                                    'board': board,
+                                    'timestamp': timestamp,
+                                    'winner': winner
+                                }
+                                
+                                moves.append(move)
+                                
+                            except Exception as e:
+                                print(f"Error processing move in game {game_id}: {e}")
+                                continue
+                        
+                        # Skip if no valid moves
+                        if not moves:
+                            print(f"Game {game_id} has no valid moves, skipping")
+                            continue
+                        
+                        # Create game object
+                        game = self._process_game_data(game_id, moves)
+                        
+                        # Store game
+                        self.games[game_id] = game
+                        
+                        # Categorize game
+                        self._categorize_game(game_id, game)
+                        
+                        # Store moves by player
+                        self._store_player_moves(game_id, moves)
+                        
+                    except Exception as e:
+                        print(f"Error processing game {game_id}: {e}")
+                        continue
+        
             # Calculate statistics
             self._calculate_statistics()
             
@@ -595,12 +677,7 @@ class GameDataProcessor:
 
     def build_optimized_data_structure(self):
         """Build optimized data structures for fast access to game patterns
-        
-        This creates indexed collections for quick lookup of games and moves based
-        on various criteria like board state, position, outcome, etc.
-        
-        Returns:
-            bool: True if successful
+        with support for move tracker data
         """
         try:
             print("Building optimized data structures...")
@@ -631,8 +708,48 @@ class GameDataProcessor:
             # Process all games to build these structures
             for game_id, game in self.games.items():
                 winner = game.get('winner')
-                moves = game.get('moves', [])
                 
+                # Check if game has move tracker
+                if 'move_tracker' in game:
+                    move_tracker = game['move_tracker']
+                    move_list = move_tracker.all_moves
+                    
+                    # Get list of all moves
+                    moves = []
+                    current_node = move_list.head
+                    move_index = 0
+                    
+                    while current_node:
+                        position = (current_node.row, current_node.col)
+                        player = current_node.player
+                        board = current_node.board_state
+                        
+                        moves.append({
+                            'position': position,
+                            'player': player,
+                            'board': board,
+                            'move_index': move_index
+                        })
+                        
+                        move_index += 1
+                        current_node = current_node.next
+                else:
+                    # Use legacy move format
+                    moves = []
+                    for i, move in enumerate(game.get('moves', [])):
+                        position = move.get('position')
+                        player = move.get('player')
+                        board = move.get('board')
+                        
+                        if position and player is not None and board is not None:
+                            moves.append({
+                                'position': position,
+                                'player': player,
+                                'board': board,
+                                'move_index': i
+                            })
+                
+                # Skip if no moves
                 if not moves:
                     continue
                     

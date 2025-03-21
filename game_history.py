@@ -4,10 +4,12 @@ from tkinter import ttk
 import numpy as np
 import os
 import datetime
+import json
 from game import TicTacToeGame
+from move_tracker import GameMoveTracker, MoveList, MoveNode
 
 class GameHistoryViewer:
-    """Class for viewing previous game data"""
+    """Class for viewing previous game data using the move tracker system"""
     
     def __init__(self, parent=None):
         """Initialize the game history viewer
@@ -267,7 +269,7 @@ class GameHistoryViewer:
         self.update_ui_state()
     
     def load_games(self):
-        """Load game history from the central CSV file"""
+        """Load game history from the central CSV file or JSON files"""
         # Clear the games list
         for widget in self.games_list_frame.winfo_children():
             widget.destroy()
@@ -347,12 +349,12 @@ class GameHistoryViewer:
         self.window.after(100, self._check_loading_complete)
 
     def _load_games_async(self):
-        """Load game data in background thread"""
+        """Load game data in background thread with move tracker integration"""
         try:
             # Update status via the main thread
-            self.window.after(0, lambda: self.loading_status.configure(text="Connecting to data store..."))
+            self.window.after(0, lambda: self.loading_status.configure(text="Looking for JSON game files..."))
             
-            # Attempt to use optimized data loading
+            # Try to use optimized data loading with move tracker support
             try:
                 from game_data_integration import GameDataIntegration
                 
@@ -393,7 +395,7 @@ class GameHistoryViewer:
                 self.window.after(0, lambda: self.loading_progress.configure(mode="determinate"))
                 self.window.after(0, lambda: self.loading_progress.set(0.25))
                 
-                # Get the games
+                # Get games dictionary
                 self.games = data_manager.get_all_games()
                 self.window.after(0, lambda: self.loading_progress.set(0.75))
                 
@@ -405,11 +407,11 @@ class GameHistoryViewer:
                 update_progress("Data processing complete", 1.0, stats)
                 
             except ImportError:
-                # Fall back to regular loading
+                # Fall back to direct JSON and CSV loading with move tracker support
                 self.window.after(0, lambda: self.loading_status.configure(
-                    text="Optimized data loader unavailable, using standard loading..."
+                    text="Loading games directly from JSON and CSV..."
                 ))
-                self.games = self.load_games_standard()
+                self.games = self.load_games_with_move_tracker()
                 
             # Loading complete
             self.is_loading = False
@@ -430,6 +432,147 @@ class GameHistoryViewer:
             
             # Flag as no longer loading
             self.is_loading = False
+
+    def load_games_with_move_tracker(self):
+        """Load games using move tracker from JSON files first, then CSV if needed"""
+        games = {}
+        
+        try:
+            # First try to load from JSON files which should have move tracker data
+            json_dir = os.path.join(os.path.dirname(__file__), "game_data", TicTacToeGame.GAME_JSON_DIR)
+            
+            if os.path.exists(json_dir):
+                json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
+                print(f"Found {len(json_files)} JSON game files")
+                
+                # Update UI
+                self.window.after(0, lambda: self.loading_status.configure(
+                    text=f"Loading {len(json_files)} games from JSON..."
+                ))
+                self.window.after(0, lambda: self.loading_progress.set(0.2))
+                
+                for i, json_file in enumerate(json_files):
+                    if self.cancel_loading_requested:
+                        break
+                        
+                    game_id = json_file.split('.')[0]
+                    json_path = os.path.join(json_dir, json_file)
+                    
+                    try:
+                        # Load game data from JSON
+                        with open(json_path, 'r') as f:
+                            game_data = json.load(f)
+                        
+                        # Extract moves data - this will contain move tracker info
+                        moves_data = game_data.get('moves', {})
+                        
+                        # Create a move tracker to restore the data
+                        move_tracker = GameMoveTracker()
+                        restored = move_tracker.restore_from_moves_data(moves_data)
+                        
+                        if restored:
+                            # Create game entry with move tracker data
+                            games[game_id] = {
+                                'move_tracker': move_tracker,
+                                'winner': game_data.get('winner'),
+                                'timestamp': game_data.get('timestamp'),
+                                'moves': []  # Legacy format for compatibility
+                            }
+                            
+                            # Also convert to legacy format for backwards compatibility
+                            all_moves = moves_data.get('all_moves', [])
+                            for move in all_moves:
+                                if move.get('board_state'):
+                                    row = move.get('row')
+                                    col = move.get('col')
+                                    player = move.get('player')
+                                    board = np.array(move.get('board_state'))
+                                    move_number = move.get('move_number')
+                                    
+                                    games[game_id]['moves'].append({
+                                        'position': (row, col),
+                                        'player': player,
+                                        'board': board,
+                                        'move_number': move_number,
+                                        'winner': game_data.get('winner') if len(games[game_id]['moves']) == len(all_moves) - 1 else None
+                                    })
+                    except Exception as e:
+                        print(f"Error loading game from JSON {json_file}: {e}")
+                        continue
+                    
+                    # Update progress
+                    if i % 5 == 0:  # Update every 5 games to avoid too many UI updates
+                        progress = 0.2 + (0.6 * (i / len(json_files)))
+                        self.window.after(0, lambda p=progress: self.loading_progress.set(p))
+                
+                # If we loaded games from JSON, we can return now
+                if games and not self.cancel_loading_requested:
+                    # Update UI for success
+                    self.window.after(0, lambda: self.loading_progress.set(1.0))
+                    self.window.after(0, lambda: self.loading_status.configure(
+                        text=f"Successfully loaded {len(games)} games from JSON"
+                    ))
+                    
+                    return games
+            
+            # If no JSON games were loaded, try CSV as fallback
+            self.window.after(0, lambda: self.loading_status.configure(
+                text="No JSON games found, falling back to CSV..."
+            ))
+            self.window.after(0, lambda: self.loading_progress.set(0.4))
+            
+            # Load from CSV and convert to move tracker format
+            csv_games = TicTacToeGame.load_game_history_from_csv()
+            
+            if not self.cancel_loading_requested and csv_games:
+                # Convert each CSV game to include move tracker
+                self.window.after(0, lambda: self.loading_status.configure(
+                    text=f"Converting {len(csv_games)} CSV games to move tracker format..."
+                ))
+                
+                for i, (game_id, game) in enumerate(csv_games.items()):
+                    if self.cancel_loading_requested:
+                        break
+                        
+                    # Create a new move tracker for this game
+                    move_tracker = GameMoveTracker()
+                    
+                    # Add each move to the tracker
+                    for move in game.get('moves', []):
+                        position = move.get('position')
+                        player = move.get('player')
+                        board = move.get('board')
+                        
+                        if position and player is not None and board is not None:
+                            row, col = position
+                            move_tracker.add_move(row, col, player, board)
+                    
+                    # Add game with move tracker
+                    games[game_id] = {
+                        'move_tracker': move_tracker,
+                        'winner': game.get('winner'),
+                        'timestamp': game.get('timestamp'),
+                        'moves': game.get('moves', [])  # Keep legacy format for compatibility
+                    }
+                    
+                    # Update progress
+                    if i % 5 == 0:  # Update every 5 games
+                        progress = 0.4 + (0.6 * (i / len(csv_games)))
+                        self.window.after(0, lambda p=progress: self.loading_progress.set(p))
+            
+            # Final update
+            self.window.after(0, lambda: self.loading_progress.set(1.0))
+            self.window.after(0, lambda: self.loading_status.configure(
+                text=f"Successfully loaded {len(games)} games"
+            ))
+            
+            return games
+            
+        except Exception as e:
+            print(f"Error in move tracker game loading: {e}")
+            import traceback
+            traceback.print_exc()
+            return {}
 
     def _check_loading_complete(self):
         """Check if background loading is complete and update UI if so"""
@@ -526,7 +669,7 @@ class GameHistoryViewer:
             return {}
 
     def select_game(self, game_id):
-        """Select a game to view
+        """Select a game to view using move tracker
         
         Args:
             game_id (str): ID of the game to view
@@ -550,12 +693,24 @@ class GameHistoryViewer:
             except:
                 date_display = game_id
             
-            # Get winner info
-            winner = game.get('winner')
+            # Get winner info using move tracker if available
+            if 'move_tracker' in game:
+                move_tracker = game['move_tracker']
+                winner = game.get('winner')
+                move_count = move_tracker.all_moves.length
+                
+                # Reset move tracker to start position for navigation
+                if move_tracker.all_moves.head:
+                    move_tracker.all_moves.goto_start()
+            else:
+                # Fall back to legacy format
+                winner = game.get('winner')
+                move_count = len(game.get('moves', []))
+            
             if winner:
                 winner_text = f"Winner: Player {winner} ({self.player_symbols[winner]})"
             else:
-                winner_text = "Draw" if len(game['moves']) == 9 else "Incomplete"
+                winner_text = "Draw" if move_count == 9 else "Incomplete"
             
             # Add debug button below game info
             if not hasattr(self, 'debug_btn'):
@@ -576,12 +731,11 @@ class GameHistoryViewer:
             
             # Update game info text
             self.game_info_label.configure(
-                text=f"Game: {date_display}\n{winner_text}\nMoves: {len(game['moves'])}"
+                text=f"Game: {date_display}\n{winner_text}\nMoves: {move_count}"
             )
             
             # Update move label
-            total_moves = len(game['moves'])
-            self.move_label.configure(text=f"Move: 0/{total_moves}")
+            self.move_label.configure(text=f"Move: 0/{move_count}")
         
         # Update UI state
         self.update_ui_state()
@@ -974,13 +1128,7 @@ class GameHistoryViewer:
         raw_window.transient(self.window)
 
     def show_previous_move(self):
-        """Show the previous move in the selected game"""
-        if self.selected_game_id and self.selected_move > 0:
-            self.selected_move -= 1
-            self.update_game_display()
-    
-    def show_next_move(self):
-        """Show the next move in the selected game"""
+        """Show the previous move in the selected game using move tracker linked list"""
         if not self.selected_game_id:
             return
             
@@ -988,9 +1136,73 @@ class GameHistoryViewer:
         if not game:
             return
             
-        if self.selected_move < len(game['moves']):
-            self.selected_move += 1
-            self.update_game_display()
+        # Use move tracker if available
+        if 'move_tracker' in game and self.selected_move > 0:
+            move_tracker = game['move_tracker']
+            
+            # If we're not at the beginning, go back one node
+            if self.selected_move == 1:
+                # Going to the start (empty board)
+                self.selected_move = 0
+                self.current_board = np.zeros((3, 3), dtype=int)
+                self.previous_move_pos = None
+            else:
+                # Navigate through linked list
+                current_node = move_tracker.all_moves.current
+                if current_node and current_node.prev:
+                    # Move to previous node
+                    prev_node = move_tracker.all_moves.previous_move()
+                    self.selected_move -= 1
+                    
+                    # Get board state from the node
+                    self.current_board = prev_node.board_state.copy()
+                    self.previous_move_pos = (prev_node.row, prev_node.col)
+            
+            # Update display
+            self.update_board_display()
+            self.update_move_info(self.selected_move)
+        else:
+            # Fall back to legacy approach if move tracker not available
+            if self.selected_move > 0:
+                self.selected_move -= 1
+                self.update_game_display()
+    
+    def show_next_move(self):
+        """Show the next move in the selected game using move tracker linked list"""
+        if not self.selected_game_id:
+            return
+            
+        game = self.games.get(self.selected_game_id)
+        if not game:
+            return
+        
+        # Use move tracker if available
+        if 'move_tracker' in game:
+            move_tracker = game['move_tracker']
+            total_moves = move_tracker.all_moves.length
+            
+            if self.selected_move < total_moves:
+                # If at beginning, set current to head
+                if self.selected_move == 0:
+                    move_tracker.all_moves.goto_start()
+                    node = move_tracker.all_moves.current
+                else:
+                    # Otherwise advance to next
+                    node = move_tracker.all_moves.next_move()
+                
+                if node:
+                    self.selected_move += 1
+                    self.current_board = node.board_state.copy()
+                    self.previous_move_pos = (node.row, node.col)
+                    
+                    # Update display
+                    self.update_board_display()
+                    self.update_move_info(self.selected_move)
+        else:
+            # Fall back to legacy approach
+            if self.selected_move < len(game.get('moves', [])):
+                self.selected_move += 1
+                self.update_game_display()
     
     def update_game_display(self):
         """Update the display for the current move in the selected game"""
@@ -1173,28 +1385,33 @@ class GameHistoryViewer:
         self.play_btn.configure(text="▶")
     
     def show_first_move(self):
-        """Show the first move (empty board)"""
+        """Show the first move (empty board) using move tracker linked list"""
         if not self.selected_game_id:
             return
         
         # Stop any ongoing playback
         self.stop_playback()
+        
+        game = self.games.get(self.selected_game_id)
+        if not game:
+            return
         
         # Reset to empty board
         self.selected_move = 0
         self.current_board = np.zeros((3, 3), dtype=int)
+        self.previous_move_pos = None
+        
+        # For move tracker, reset the current position to start
+        if 'move_tracker' in game:
+            move_tracker = game['move_tracker']
+            move_tracker.all_moves.goto_start()
+        
+        # Update display
         self.update_board_display()
-        
-        # Update move counter
-        game = self.games.get(self.selected_game_id)
-        if game:
-            self.move_label.configure(text=f"Move: 0/{len(game['moves'])}")
-        
-        # Update UI state
-        self.update_ui_state()
+        self.update_move_info(0)
     
     def show_last_move(self):
-        """Show the last move of the game"""
+        """Show the last move of the game using move tracker linked list"""
         if not self.selected_game_id:
             return
         
@@ -1202,22 +1419,42 @@ class GameHistoryViewer:
         self.stop_playback()
         
         game = self.games.get(self.selected_game_id)
-        if not game or not game['moves']:
+        if not game:
             return
         
-        # Set to last move
-        self.selected_move = len(game['moves'])
-        
-        # Update board to final state
-        self.current_board = game['moves'][-1]['board'].copy()
-        self.update_board_display()
-        
-        # Update move counter
-        self.move_label.configure(text=f"Move: {self.selected_move}/{len(game['moves'])}")
-        
-        # Update UI state
-        self.update_ui_state()
-    
+        # Use move tracker if available
+        if 'move_tracker' in game:
+            move_tracker = game['move_tracker']
+            
+            # Go to the end of the linked list
+            move_tracker.all_moves.goto_end()
+            node = move_tracker.all_moves.current
+            
+            if node:
+                self.selected_move = move_tracker.all_moves.length
+                self.current_board = node.board_state.copy()
+                self.previous_move_pos = (node.row, node.col)
+                
+                # Update display
+                self.update_board_display()
+                self.update_move_info(self.selected_move)
+        else:
+            # Fall back to legacy approach
+            moves = game.get('moves', [])
+            if not moves:
+                return
+            
+            # Set to last move
+            self.selected_move = len(moves)
+            
+            # Update board to final state
+            self.current_board = moves[-1]['board'].copy()
+            self.previous_move_pos = moves[-1]['position']
+            
+            # Update display
+            self.update_board_display()
+            self.update_move_info(self.selected_move)
+
     def on_closing(self):
         """Handle window closing event"""
         # Stop any ongoing playback

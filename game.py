@@ -2,10 +2,13 @@ import numpy as np
 import csv
 import os
 import datetime
+import json
+from move_tracker import GameMoveTracker
 
 class TicTacToeGame:
     # Central file for all game data
     GAME_DATA_FILE = "all_games_data.csv"
+    GAME_JSON_DIR = "game_json"
     
     def __init__(self, save_dir=None):
         # Game state: 0 = empty, 1 = X, 2 = O
@@ -13,10 +16,11 @@ class TicTacToeGame:
         self.current_player = 1  # Player 1 (X) starts
         self.game_over = False
         self.winner = None
-        # Add history tracking
-        self.history = []  # Will store board states after each move
         
-        # Setup for CSV saving
+        # Use the new move tracker system
+        self.move_tracker = GameMoveTracker()
+        
+        # Setup for saving
         self.save_dir = save_dir or os.path.join(os.path.dirname(__file__), "game_data")
         os.makedirs(self.save_dir, exist_ok=True)
         self.game_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -27,6 +31,10 @@ class TicTacToeGame:
         # Create CSV header if file doesn't exist
         if not os.path.exists(self.csv_path):
             self._initialize_csv()
+        
+        # Create JSON directory for detailed game data
+        self.json_dir = os.path.join(self.save_dir, self.GAME_JSON_DIR)
+        os.makedirs(self.json_dir, exist_ok=True)
     
     def _initialize_csv(self):
         """Initialize CSV file with headers"""
@@ -49,12 +57,15 @@ class TicTacToeGame:
             # Place the current player's mark
             self.board[row, col] = self.current_player
             
-            # Record the move in history
+            # Add move to the tracker
+            self.move_tracker.add_move(row, col, self.current_player, self.board.copy())
+            
+            # Record the move for CSV and legacy support
             move_data = {
                 'board': self.board.copy(),  # Store a copy of the board
                 'player': self.current_player,
                 'position': (row, col),
-                'move_number': len(self.history) + 1,
+                'move_number': self.move_tracker.all_moves.length,
                 'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 'winner': None  # Initialize with no winner
             }
@@ -72,9 +83,12 @@ class TicTacToeGame:
                 self.winner = 0  # 0 for draw
                 move_data['winner'] = 0  # Update winner as draw in move data
             
-            # Add to history and save
-            self.history.append(move_data)
+            # Save the move
             self._save_move_to_csv(move_data)
+            
+            # Also save the full game state to JSON if game is over
+            if self.game_over:
+                self._save_game_to_json()
             
             # Switch player (1->2, 2->1)
             if not self.game_over:
@@ -121,6 +135,28 @@ class TicTacToeGame:
         except Exception as e:
             print(f"Error saving move to CSV: {e}")
     
+    def _save_game_to_json(self):
+        """Save complete game data to JSON file"""
+        try:
+            # Create game data dictionary
+            game_data = {
+                'game_id': self.game_id,
+                'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'winner': self.winner,
+                'moves': self.move_tracker.get_moves_data()
+            }
+            
+            # Write to JSON file
+            json_path = os.path.join(self.json_dir, f"{self.game_id}.json")
+            with open(json_path, 'w') as f:
+                json.dump(game_data, f, indent=2)
+                
+            print(f"Game saved to {json_path}")
+            return True
+        except Exception as e:
+            print(f"Error saving game to JSON: {e}")
+            return False
+    
     def check_win(self):
         """Check if the current player has won
         
@@ -146,8 +182,9 @@ class TicTacToeGame:
         self.current_player = 1  # Player 1 (X) starts
         self.game_over = False
         self.winner = None
-        # Clear game history when resetting
-        self.history = []
+        
+        # Clear move tracker
+        self.move_tracker.clear()
         
         # Generate a new game ID for the new game
         self.game_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -161,13 +198,69 @@ class TicTacToeGame:
         return [(i, j) for i in range(3) for j in range(3) if self.board[i, j] == 0]
     
     def get_game_history(self):
-        """Get the complete history of the current game
+        """Get the complete history of the current game using move tracker
         
         Returns:
-            list: List of dictionaries containing board state and move info
+            dict: Dictionary with move history data
         """
-        return self.history
+        return self.move_tracker.get_moves_data()
     
+    @classmethod
+    def load_game_from_json(cls, game_id, save_dir=None):
+        """Load a game from a JSON file
+        
+        Args:
+            game_id (str): ID of the game to load
+            save_dir (str, optional): Directory where game data is stored
+            
+        Returns:
+            TicTacToeGame: Loaded game instance or None if not found
+        """
+        save_dir = save_dir or os.path.join(os.path.dirname(__file__), "game_data")
+        json_dir = os.path.join(save_dir, cls.GAME_JSON_DIR)
+        json_path = os.path.join(json_dir, f"{game_id}.json")
+        
+        if not os.path.exists(json_path):
+            print(f"Game JSON file not found: {json_path}")
+            return None
+        
+        try:
+            # Load game data
+            with open(json_path, 'r') as f:
+                game_data = json.load(f)
+            
+            # Create new game instance
+            game = cls(save_dir=save_dir)
+            game.game_id = game_id
+            game.winner = game_data.get('winner')
+            
+            # Restore move history
+            if 'moves' in game_data:
+                game.move_tracker.restore_from_moves_data(game_data['moves'])
+                
+                # Restore board to final state
+                if game.move_tracker.current_board is not None:
+                    game.board = game.move_tracker.current_board.copy()
+                
+                # Determine game state
+                if game.winner is not None:
+                    game.game_over = True
+                    # Set current player to the loser (or player 1 if draw)
+                    game.current_player = 3 - game.winner if game.winner in [1, 2] else 1
+                else:
+                    # Determine current player based on move count
+                    moves_count = game.move_tracker.all_moves.length
+                    game.current_player = 2 if moves_count % 2 == 1 else 1
+            
+            return game
+            
+        except Exception as e:
+            print(f"Error loading game from JSON: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
+    # Legacy methods for compatibility
     @classmethod
     def load_game_history_from_csv(cls, game_id=None, save_dir=None):
         """Load game history from the central CSV file
@@ -198,6 +291,51 @@ class TicTacToeGame:
         
         games = {}
         
+        # Check for JSON files first
+        json_dir = os.path.join(save_dir, cls.GAME_JSON_DIR)
+        if os.path.exists(json_dir):
+            try:
+                json_files = [f for f in os.listdir(json_dir) if f.endswith('.json')]
+                print(f"Found {len(json_files)} JSON game files")
+                
+                for json_file in json_files:
+                    game_id_from_file = json_file.split('.')[0]
+                    
+                    # Skip if we're looking for a specific game and this isn't it
+                    if game_id and game_id_from_file != game_id:
+                        continue
+                    
+                    # Load the game
+                    game = cls.load_game_from_json(game_id_from_file, save_dir)
+                    if game:
+                        # Convert to legacy format
+                        games[game_id_from_file] = {
+                            'moves': [],
+                            'winner': game.winner,
+                            'timestamp': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        }
+                        
+                        # Convert move tracker data to legacy format
+                        move_data = game.move_tracker.get_moves_data()
+                        for move in move_data.get('all_moves', []):
+                            if 'board_state' in move and move['board_state']:
+                                row = move['row']
+                                col = move['col']
+                                player = move['player']
+                                board = np.array(move['board_state'])
+                                move_number = move['move_number']
+                                
+                                games[game_id_from_file]['moves'].append({
+                                    'position': (row, col),
+                                    'player': player,
+                                    'board': board,
+                                    'move_number': move_number,
+                                    'winner': game.winner if len(games[game_id_from_file]['moves']) == len(move_data.get('all_moves', [])) - 1 else None
+                                })
+            except Exception as e:
+                print(f"Error processing JSON files: {e}")
+        
+        # Fall back to CSV for remaining games or if no JSON files found
         try:
             # Debug information
             print(f"Loading game history from {csv_path}")
@@ -223,6 +361,10 @@ class TicTacToeGame:
                 for row in reader:
                     row_count += 1
                     curr_game_id = row.get('game_id')
+                    
+                    # Skip games we already loaded from JSON
+                    if curr_game_id in games:
+                        continue
                     
                     if not curr_game_id:
                         print(f"Warning: Row {row_count} has no game_id, skipping")

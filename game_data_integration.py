@@ -1,14 +1,14 @@
 import os
 import numpy as np
 import pickle
+import json
+from collections import defaultdict
 from game_data_processor import GameDataProcessor
+from move_tracker import GameMoveTracker
 
 class GameDataIntegration:
     """Integration layer for game data processing and optimized loading
-    
-    This class provides a simplified interface to access game data with
-    optimized loading and analysis features. It acts as a facade for
-    the more complex GameDataProcessor.
+    with complete support for the new move tracker system
     """
     
     def __init__(self, use_cache=True, progress_callback=None):
@@ -23,6 +23,7 @@ class GameDataIntegration:
         self.optimized_data_file = os.path.join(self.data_dir, "optimized_game_data.pkl")
         self.use_cache = use_cache
         self.progress_callback = progress_callback
+        self.json_dir = os.path.join(self.data_dir, "game_json")
         
         # Try to load optimized data if cache is enabled
         if use_cache and os.path.exists(self.optimized_data_file):
@@ -32,10 +33,15 @@ class GameDataIntegration:
             self._initialize_data()
     
     def _initialize_data(self):
-        """Initialize data by loading from CSV and building optimized structures"""
-        # Load raw data from CSV
-        self._report_progress("Loading game data from CSV...", 0.1)
-        self.processor.load_data()
+        """Initialize data by loading from JSON files and CSV, then building optimized structures"""
+        # Load directly from JSON files first
+        self._report_progress("Checking for JSON game files...", 0.05)
+        games_loaded = self._load_from_json_files()
+        
+        if not games_loaded:
+            # Fall back to CSV loading
+            self._report_progress("No JSON games found, loading from CSV...", 0.1)
+            self.processor.load_data()
         
         # Report intermediate stats
         if self.progress_callback:
@@ -51,6 +57,118 @@ class GameDataIntegration:
         
         # Final report
         self._report_progress("Data loading complete", 1.0, self.processor.stats)
+    
+    def _load_from_json_files(self):
+        """Load games directly from JSON files with move tracker data
+        
+        Returns:
+            bool: True if games were loaded, False otherwise
+        """
+        try:
+            if not os.path.exists(self.json_dir):
+                return False
+                
+            json_files = [f for f in os.listdir(self.json_dir) if f.endswith('.json')]
+            if not json_files:
+                return False
+                
+            self._report_progress(f"Loading {len(json_files)} JSON games...", 0.15)
+            
+            # Import move tracker
+            from move_tracker import GameMoveTracker
+            
+            # Process each JSON file
+            for i, json_file in enumerate(json_files):
+                game_id = json_file.split('.')[0]
+                json_path = os.path.join(self.json_dir, json_file)
+                
+                try:
+                    # Load game data from JSON
+                    with open(json_path, 'r') as f:
+                        game_data = json.load(f)
+                    
+                    # Extract moves data - this will contain move tracker info
+                    moves_data = game_data.get('moves', {})
+                    
+                    # Create a move tracker to restore the data
+                    move_tracker = GameMoveTracker()
+                    restored = move_tracker.restore_from_moves_data(moves_data)
+                    
+                    if restored:
+                        # Create game entry with move tracker data
+                        self.processor.games[game_id] = {
+                            'game_id': game_id,
+                            'move_tracker': move_tracker,
+                            'winner': game_data.get('winner'),
+                            'timestamp': game_data.get('timestamp')
+                        }
+                        
+                        # Also add legacy format moves for compatibility
+                        self.processor.games[game_id]['moves'] = self._convert_to_legacy_moves(move_tracker, game_data.get('winner'))
+                        self.processor.games[game_id]['move_count'] = move_tracker.all_moves.length
+                        
+                        # Categorize game
+                        winner = game_data.get('winner')
+                        if winner in [1, 2]:
+                            self.processor.winning_games[winner].append(game_id)
+                            self.processor.completed_games.append(game_id)
+                        elif winner == 0:
+                            self.processor.draws.append(game_id)
+                            self.processor.completed_games.append(game_id)
+                        else:
+                            self.processor.incomplete_games.append(game_id)
+                except Exception as e:
+                    print(f"Error processing JSON game {json_file}: {e}")
+                    continue
+                
+                # Update progress
+                if i % 5 == 0:  # Update every 5 games
+                    progress = 0.15 + (0.2 * (i / len(json_files)))
+                    self._report_progress(f"Loading JSON game {i+1}/{len(json_files)}", progress)
+            
+            # Calculate statistics
+            self.processor._calculate_statistics()
+            
+            return len(self.processor.games) > 0
+            
+        except Exception as e:
+            print(f"Error loading from JSON: {e}")
+            return False
+    
+    def _convert_to_legacy_moves(self, move_tracker, winner):
+        """Convert move tracker data to legacy moves format
+        
+        Args:
+            move_tracker (GameMoveTracker): Move tracker with game data
+            winner (int): Game winner (1, 2, 0, or None)
+            
+        Returns:
+            list: List of move dictionaries in legacy format
+        """
+        moves = []
+        
+        # Start at head node
+        node = move_tracker.all_moves.head
+        move_number = 1
+        
+        while node:
+            move = {
+                'move_number': move_number,
+                'player': node.player,
+                'position': (node.row, node.col),
+                'board': node.board_state.copy(),
+                'winner': None
+            }
+            
+            # Only last move gets winner value
+            if node.next is None:
+                move['winner'] = winner
+                
+            moves.append(move)
+            move_number += 1
+            node = node.next
+            
+        return moves
     
     def _load_optimized_data(self):
         """Load optimized data structures from cache file"""
@@ -119,7 +237,7 @@ class GameDataIntegration:
             print(f"Status: {stage}")
     
     def refresh_data(self):
-        """Refresh data by reloading from CSV and rebuilding optimized structures"""
+        """Refresh data by reloading from JSON and CSV and rebuilding optimized structures"""
         self._initialize_data()
         return True
     
@@ -212,6 +330,44 @@ class GameDataIntegration:
             dict: Dictionary of patterns by player
         """
         return self.processor.get_winning_patterns()
+    
+    def get_move_tracker_for_game(self, game_id):
+        """Get the move tracker for a specific game
+        
+        Args:
+            game_id (str): Game ID
+            
+        Returns:
+            GameMoveTracker: Move tracker for the game or None if not available
+        """
+        game = self.processor.games.get(game_id)
+        if game and 'move_tracker' in game:
+            return game['move_tracker']
+            
+        # If no move tracker exists but we have legacy format, try to create one
+        if game and 'moves' in game:
+            try:
+                # Create a new move tracker
+                move_tracker = GameMoveTracker()
+                
+                # Add each move
+                for move in game['moves']:
+                    position = move.get('position')
+                    player = move.get('player')
+                    board = move.get('board')
+                    
+                    if position and player is not None and board is not None:
+                        row, col = position
+                        move_tracker.add_move(row, col, player, board)
+                
+                # Store for future use
+                game['move_tracker'] = move_tracker
+                return move_tracker
+            except Exception as e:
+                print(f"Error creating move tracker for game {game_id}: {e}")
+                return None
+        
+        return None
 
 # Example usage
 if __name__ == "__main__":

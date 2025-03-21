@@ -1,8 +1,8 @@
 import customtkinter as ctk
-import os
-import tkinter as tk
 from app import TicTacToeApp
 from assets_manager import AssetManager, ASSETS_DIR
+import os
+import sys
 
 def main():
     # Set theme and appearance
@@ -18,28 +18,35 @@ def main():
     assets = AssetManager()
     
     # Generate placeholder animations if needed
-    if not os.path.exists(os.path.join(ASSETS_DIR, "x_win.gif")):
-        print("No animations found, generating placeholders...")
-        assets.generate_placeholder_animations()
-        print("Animation generation complete.")
+    assets.generate_placeholder_animations()
     
-    # Set window icon if available
-    icon_path = os.path.join(ASSETS_DIR, "icon.png")
-    if os.path.exists(icon_path):
-        try:
-            # Different method for different platforms
-            if hasattr(root, 'iconphoto'):
-                icon = tk.PhotoImage(file=icon_path)
-                root.iconphoto(True, icon)
-        except Exception as e:
-            print(f"Could not load icon: {e}")
+    # Create app
+    print("Initializing game...")
+    app = TicTacToeApp(root, assets_manager=assets)
     
-    print("Starting application...")
-    # Initialize app with the asset manager
-    app = TicTacToeApp(root, assets)
+    # Check for command line arguments
+    if len(sys.argv) > 1:
+        # Check for --train-ai argument
+        if sys.argv[1] == "--train-ai":
+            print("Auto-starting AI training...")
+            app.train_ai_model()
+        # Check for --view-history argument
+        elif sys.argv[1] == "--view-history":
+            print("Auto-opening history viewer...")
+            app.root.after(500, app.show_game_history)
     
-    # Start main loop
+    # Run the application
+    print("Starting game...")
     root.mainloop()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\nGame terminated by user.")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\nError: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
