@@ -5,7 +5,7 @@ import time
 import os
 from PIL import Image, ImageTk, ImageSequence
 from assets_manager import AssetManager, ASSETS_DIR
-from utils import convert_to_ctk_image, load_gif_frames_as_ctk, safe_after, cancel_after_safely
+from utils import convert_to_ctk_image, load_gif_frames_as_ctk, safe_after, cancel_after_safely, update_app_heartbeat
 
 class SplashScreen:
     """Splash screen with loading animation and progress updates"""
@@ -41,12 +41,45 @@ class SplashScreen:
         self.current_frame = 0
         self.animation_label = None
         
+        # Add drag functionality
+        self.setup_drag_functionality()
+        
         # Set proper handler for when window is destroyed
         self.window.protocol("WM_DELETE_WINDOW", self._on_closing)
         
         # Start loading data in background
         self.loading_thread = threading.Thread(target=self._load_data)
         self.loading_thread.daemon = True
+    
+    def setup_drag_functionality(self):
+        """Add functionality to drag the window around"""
+        self.drag_data = {"x": 0, "y": 0, "dragging": False}
+        
+        def start_drag(event):
+            self.drag_data["x"] = event.x
+            self.drag_data["y"] = event.y
+            self.drag_data["dragging"] = True
+        
+        def stop_drag(event):
+            self.drag_data["dragging"] = False
+        
+        def on_drag(event):
+            if self.drag_data["dragging"]:
+                # Calculate the distance moved
+                dx = event.x - self.drag_data["x"]
+                dy = event.y - self.drag_data["y"]
+                
+                # Get the current position
+                x = self.window.winfo_x() + dx
+                y = self.window.winfo_y() + dy
+                
+                # Set the new position
+                self.window.geometry(f"+{x}+{y}")
+        
+        # Bind events to the main frame to handle drag
+        self.window.bind("<ButtonPress-1>", start_drag)
+        self.window.bind("<ButtonRelease-1>", stop_drag)
+        self.window.bind("<B1-Motion>", on_drag)
     
     def center_window(self):
         """Center the window on the screen"""
@@ -366,10 +399,15 @@ class SplashScreen:
             
             # Calculate and cache statistics
             if game_history:
-                stats = self._calculate_basic_statistics(game_history)
-                self.loaded_data['game_stats'] = stats
-                # Store in data manager
-                data_manager.set('game_stats', stats, notify=False)
+                # Use the data manager's statistics method if available
+                if hasattr(data_manager, 'update_game_statistics'):
+                    stats = data_manager.update_game_statistics()
+                    self.loaded_data['game_stats'] = stats
+                else:
+                    stats = self._calculate_basic_statistics(game_history)
+                    self.loaded_data['game_stats'] = stats
+                    # Store in data manager
+                    data_manager.set('game_stats', stats, notify=False)
             
             # Step 8: Preload main menu GUI (NEW STEP)
             queue_ui_update("Preloading user interface...", current_step/total_steps)
@@ -588,7 +626,7 @@ class SplashScreen:
         self.status_label.configure(text="Loading complete!", text_color="#4CAF50")
         success("Splash screen loading complete, will now transition to main menu")
         
-        # ENHANCED: Create a flag to track if transition completed successfully
+        # Flag to track if transition completed successfully
         self._transition_completed = False
         
         # Set a timeout to ensure we don't hang in the transition
@@ -606,37 +644,31 @@ class SplashScreen:
             else:
                 local_data = {}
                 
-            # Try direct callback approach first
-            if hasattr(self, 'window') and self.window.winfo_exists():
-                try:
-                    # Force window destruction first
+            # Force window destruction and execute callback
+            try:
+                if hasattr(self, 'window') and self.window.winfo_exists():
                     error("Forcing window destruction in emergency transition")
                     self.window.destroy()
-                except Exception as e:
-                    error(f"Error destroying window in emergency: {e}")
                 
-            # If we have a callback, execute it directly as last resort
-            if local_callback:
-                try:
+                # Execute callback directly as last resort
+                if local_callback:
                     error("LAST RESORT: Executing emergency callback directly")
                     local_callback(local_data)
                     self._transition_completed = True
-                except Exception as e:
-                    error(f"Emergency callback also failed: {e}")
-                    error("Application deadlocked - user might need to force quit")
+            except Exception as e:
+                error(f"Emergency transition also failed: {e}")
         
-        # Schedule emergency transition after 5 seconds if normal transition hangs
+        # Schedule emergency transition after 3 seconds (reduced from 5)
         emergency_timer = None
         if hasattr(self, 'window') and self.window.winfo_exists():
-            emergency_timer = self.window.after(5000, emergency_transition)
+            emergency_timer = self.window.after(3000, emergency_transition)
             transition(f"Scheduled emergency transition with ID {emergency_timer}")
         
-        # Start normal transition
+        # Start direct transition without fading
         try:
-            debug("Starting normal transition sequence")
-            self._close_and_open_main()
+            self._close_and_transition_directly()
         except Exception as e:
-            error(f"Exception during normal transition: {e}")
+            error(f"Exception during transition: {e}")
             # Try emergency path immediately if normal transition crashes
             emergency_transition()
         
@@ -648,14 +680,20 @@ class SplashScreen:
             except:
                 pass
 
-    def _close_and_open_main(self):
-        """Close splash screen and open main menu"""
-        from debug_logger import transition, warning, error
+    def _close_and_transition_directly(self):
+        """Close splash screen and execute callback directly - simplified for reliability"""
+        from debug_logger import transition, success, warning, error, debug
         
-        transition("Starting transition from splash screen to main menu")
+        transition("Starting direct transition from splash screen")
         
-        # First stop all animations and threads to prevent UI updates after window destruction
+        # Stop all animations and cancel pending tasks
         self.is_loading = False
+        for after_id in list(self.after_ids):
+            try:
+                self.window.after_cancel(after_id)
+            except Exception:
+                pass
+        self.after_ids = []
         
         # Clean up any stray after commands
         from utils import cleanup_after_commands
@@ -663,89 +701,25 @@ class SplashScreen:
         
         # Make a local copy of callback and data
         callback_func = self.on_complete_callback
-        if callback_func:
-            transition("Callback function exists, preparing data for transition")
-            callback_data = dict(self.loaded_data)
-        else:
-            warning("No callback function found for splash screen completion")
-            callback_data = None
+        callback_data = dict(self.loaded_data) if hasattr(self, 'loaded_data') else {}
         
-        # Get the preloaded menu if available
-        preloaded_menu = self.loaded_data.get('preloaded_menu')
-        if preloaded_menu:
-            transition("Preloaded menu found for transition")
-        else:
-            warning("No preloaded menu found, will need to create new menu")
+        # Update app heartbeat
+        update_app_heartbeat()
         
-        # Clean up resources before closing
-        self._cleanup_resources()
-        
-        # Make sure we're in the main thread
-        if threading.current_thread() is not threading.main_thread():
-            warning("Attempting to close window from background thread! Scheduling on main thread")
-            # Schedule on main thread instead (may be delayed)
-            if hasattr(self, 'window') and self.window.winfo_exists():
-                transition("Scheduling _finish_close_and_open_main on main thread")
-                self.window.after(0, lambda: self._finish_close_and_open_main(
-                    callback_func, callback_data, preloaded_menu))
-            return
-        
-        # We're in the main thread - proceed with window operations
-        transition("In main thread, proceeding with direct transition")
-        self._finish_close_and_open_main(callback_func, callback_data, preloaded_menu)
-
-    def _finish_close_and_open_main(self, callback_func, callback_data, preloaded_menu):
-        """Finish closing the splash screen and opening the main menu (on main thread)"""
-        from debug_logger import transition, error, success, warning, debug
-        
-        transition("Executing final splash screen to main menu transition")
-        
-        # Mark this point is reached during transition
-        debug("Entered _finish_close_and_open_main")
-        
-        # Update UI state tracking - will be re-marked as active by main menu
+        # Update UI state tracking
         from utils import mark_main_ui_active
         mark_main_ui_active(False)
         
-        # Track if window was successfully destroyed
-        window_destroyed = False
-        
-        # Destroy window with error handling
+        # Destroy window
         try:
             if hasattr(self, 'window') and self.window.winfo_exists():
                 transition("Destroying splash screen window")
-                
-                # Cancel all remaining after callbacks
-                for after_id in list(self.after_ids):
-                    try:
-                        self.cancel_after(after_id)
-                    except Exception as e:
-                        warning(f"Error cancelling after ID {after_id}: {e}")
-                
-                # Use direct destruction instead of fade for reliability
-                try:
-                    self.window.withdraw()  # Hide window first
-                    transition("Window withdrawn")
-                except Exception as e:
-                    warning(f"Error withdrawing window: {e}")
-                
-                try:
-                    self.window.quit()      # Stop the mainloop
-                    transition("Window mainloop stopped")
-                except Exception as e:
-                    warning(f"Error stopping mainloop: {e}")
-                
-                try:
-                    self.window.destroy()   # Force destroy window
-                    window_destroyed = True
-                    success("Splash screen window destroyed successfully")
-                except Exception as e:
-                    error(f"Error destroying window: {e}")
+                self.window.destroy()
+                success("Splash screen window destroyed successfully")
         except Exception as e:
-            error(f"Error in window destruction sequence: {e}")
+            error(f"Error destroying splash screen window: {e}")
         
-        # Clean up any stray after commands again after window destruction
-        from utils import cleanup_after_commands
+        # Clean up again after window destruction
         cleanup_after_commands()
         
         # Clear references to UI elements to help garbage collection
@@ -753,49 +727,22 @@ class SplashScreen:
         self.animation_frames = []
         self.status_label = None
         self.progress_bar = None
-        self.after_ids = []
         
-        # Mark at this key point in transition
-        debug("About to execute completion callback")
-        
-        # Now that window is destroyed, call the callback
+        # Execute callback
         if callback_func is not None:
             try:
-                transition("Preparing to call completion callback with preloaded menu")
-                
-                if preloaded_menu:
-                    transition("Adding preloaded menu to callback data")
-                    # Add preloaded menu to callback data
-                    if callback_data is None:
-                        callback_data = {'preloaded_menu': preloaded_menu}
-                    else:
-                        callback_data['preloaded_menu'] = preloaded_menu
-                
-                # Wait for a tiny bit to ensure window destruction is processed
-                if window_destroyed:
-                    transition("Window destroyed successfully, initiating callback")
-                    try:
-                        import time
-                        time.sleep(0.05)  # Brief pause to let Tk process the window destruction
-                    except:
-                        pass
-                
                 transition("Executing completion callback")
                 callback_func(callback_data)
                 success("Completion callback executed successfully")
-                
-                # Indicate successful transition to avoid emergency callback
                 self._transition_completed = True
-                
             except Exception as e:
                 error(f"Error in callback after splash screen close: {e}")
                 import traceback
                 traceback.print_exc()
                 
-                # Emergency fallback - try again with simpler data
+                # Try with minimal data as emergency fallback
                 try:
                     warning("Attempting emergency callback with minimal data")
-                    # Try callback with just the most essential data
                     minimal_data = {'game_history': callback_data.get('game_history', {})}
                     callback_func(minimal_data)
                     self._transition_completed = True
@@ -804,152 +751,69 @@ class SplashScreen:
         else:
             warning("No callback function to execute after splash screen close")
 
-    def _fade_out_window(self, callback_func, callback_data, preloaded_menu, current_alpha=1.0):
-        """Gradually fade out the window for a smooth transition
-        
-        Args:
-            callback_func: Callback to call when complete
-            callback_data: Data to pass to callback
-            preloaded_menu: Preloaded main menu instance
-            current_alpha (float): Current opacity value
-        """
-        if current_alpha > 0.0 and hasattr(self, 'window') and self.window.winfo_exists():
-            # Decrease opacity
-            next_alpha = max(current_alpha - 0.1, 0.0)
-            try:
-                self.window.attributes("-alpha", next_alpha)
-                
-                # Schedule next step
-                self.window.after(20, lambda: self._fade_out_window(
-                    callback_func, callback_data, preloaded_menu, next_alpha))
-            except Exception:
-                # If error during fade, just close immediately
-                self._finalize_transition(callback_func, callback_data, preloaded_menu)
-        else:
-            # Finalize the transition
-            self._finalize_transition(callback_func, callback_data, preloaded_menu)
-
-    def _finalize_transition(self, callback_func, callback_data, preloaded_menu):
-        """Finalize the transition to the main menu
-        
-        Args:
-            callback_func: Callback to call when complete
-            callback_data: Data to pass to callback
-            preloaded_menu: Preloaded main menu instance
-        """
-        # Destroy the splash screen window
-        if hasattr(self, 'window') and self.window.winfo_exists():
-            self.window.withdraw()  # Hide window first
-            self.window.quit()      # Stop the mainloop
-            self.window.destroy()   # Force destroy window
-        
-        # Clean up any stray after commands again after window destruction
-        from utils import cleanup_after_commands
-        cleanup_after_commands()
-        
-        # Clear references to UI elements to help garbage collection
-        self.animation_label = None
-        self.animation_frames = []
-        self.status_label = None
-        self.progress_bar = None
-        self.after_ids = []
-        
-        # Now call the callback with the preloaded menu
-        if callback_func is not None:
-            try:
-                if preloaded_menu:
-                    # Add preloaded menu to callback data
-                    if callback_data is None:
-                        callback_data = {'preloaded_menu': preloaded_menu}
-                    else:
-                        callback_data['preloaded_menu'] = preloaded_menu
-                    
-                callback_func(callback_data)
-            except Exception as e:
-                print(f"Error in callback after splash screen close: {e}")
-
-    def _cleanup_resources(self):
-        """Clean up resources before closing"""
-        # Stop any ongoing animations
+    def _on_closing(self):
+        """Handle window closing properly"""
+        # Set flag to stop animations and loading
         self.is_loading = False
         
-        # Clear animation references to help garbage collection
-        self.animation_frames = []
+        # Update UI state tracking
+        from utils import mark_main_ui_active
+        mark_main_ui_active(False)
         
-        # Stop progress bar if running
-        if hasattr(self, 'progress_bar'):
+        # Cancel all scheduled callbacks
+        for after_id in self.after_ids:
             try:
-                self.progress_bar.stop()
-            except:
+                self.window.after_cancel(after_id)
+            except Exception:
                 pass
         
-        # Make sure loading thread is terminated if still running
-        if self.loading_thread and self.loading_thread.is_alive():
-            # Cannot forcibly terminate a thread in Python, but we can set a flag
-            # that the thread should check and exit gracefully
-            self.is_loading = False
+        # Clear references to allow garbage collection
+        self.animation_frames = []
+        self.animation_label = None
+        
+        # Destroy window
+        self.window.destroy()
 
-    def _calculate_basic_statistics(self, game_history):
-        """Calculate basic game statistics from history data
+    def schedule_after(self, delay, callback):
+        """Schedule an after callback and track its ID
         
         Args:
-            game_history (dict): Dictionary of game history data
+            delay: Delay in milliseconds
+            callback: Function to call
             
         Returns:
-            dict: Statistics dictionary
+            The after ID
         """
-        stats = {
-            "total_games": len(game_history),
-            "player_wins": {1: 0, 2: 0},
-            "draws": 0,
-            "incomplete": 0,
-            "avg_moves": 0,
-            "recent_games": []
-        }
-        
-        total_moves = 0
-        move_counts = []
-        
-        # Process each game
-        for game_id, game in game_history.items():
-            winner = game.get('winner')
+        if not hasattr(self, 'window') or not self.window.winfo_exists():
+            return None
             
-            if winner in [1, 2]:
-                stats["player_wins"][winner] += 1
-            elif winner == 0:
-                stats["draws"] += 1
-            else:
-                stats["incomplete"] += 1
-            
-            # Count moves
-            moves = game.get('moves', [])
-            move_count = len(moves)
-            total_moves += move_count
-            
-            if move_count > 0:
-                move_counts.append((game_id, move_count))
+        after_id = self.window.after(delay, callback)
+        self.after_ids.append(after_id)
+        return after_id
+
+    def cancel_after(self, after_id):
+        """Cancel an after callback
         
-        # Calculate average moves
-        if stats["total_games"] > 0:
-            stats["avg_moves"] = total_moves / stats["total_games"]
+        Args:
+            after_id: ID of callback to cancel
+        """
+        if after_id in self.after_ids:
+            try:
+                self.window.after_cancel(after_id)
+                self.after_ids.remove(after_id)
+            except Exception:
+                pass
+
+    def _process_ui_updates(self):
+        """Process queued UI updates on the main thread"""
+        if not hasattr(self, 'ui_updates'):
+            self.ui_updates = []
         
-        # Get most recent games (up to 5)
-        sorted_game_ids = sorted(
-            game_history.keys(),
-            key=lambda gid: game_history[gid].get('timestamp', gid),
-            reverse=True
-        )
-        
-        for game_id in sorted_game_ids[:5]:
-            game = game_history[game_id]
-            stats["recent_games"].append({
-                "id": game_id,
-                "winner": game.get('winner'),
-                "moves": len(game.get('moves', []))
-            })
-        
-        return stats
-    
+        # Check if we have any pending updates
+        while self.ui_updates and hasattr(self, 'window') and self.window.winfo_exists():
+            status_text, progress_value = self.ui_updates.pop(0)
+            self._update_progress(status_text, progress_value)
+
     def start(self):
         """Start the splash screen and loading process"""
         from debug_logger import info, warning, error, debug, success
@@ -964,7 +828,8 @@ class SplashScreen:
         # Set up watchdog for UI operations
         def ui_watchdog():
             warning("UI operation watchdog triggered - UI might be stuck")
-            # Just log warning, main watchdog in main.py will handle recovery
+            # Update app heartbeat to prevent force exit
+            update_app_heartbeat()
         
         # Schedule watchdog
         watchdog_id = None
@@ -975,7 +840,7 @@ class SplashScreen:
             warning(f"Could not set up UI watchdog: {e}")
         
         try:
-            # Initialize UI elements in a safer order
+            # Initialize UI elements
             try:
                 debug("Starting the progress bar")
                 if hasattr(self, 'progress_bar'):
@@ -985,7 +850,7 @@ class SplashScreen:
             
             try:
                 debug("Loading animation")
-                # Start loading animation using safer method
+                # Start loading animation
                 self.window.after(10, self.load_animation)
             except Exception as e:
                 warning(f"Error scheduling animation loading: {e}")
@@ -1041,72 +906,64 @@ class SplashScreen:
                 except Exception as e2:
                     error(f"Emergency callback also failed: {e2}")
 
-    def _on_closing(self):
-        """Handle window closing properly"""
-        # Set flag to stop animations and loading
-        self.is_loading = False
-        
-        # Update UI state tracking
-        from utils import mark_main_ui_active
-        mark_main_ui_active(False)
-        
-        # Cancel all scheduled callbacks
-        for after_id in self.after_ids:
-            try:
-                self.window.after_cancel(after_id)
-            except Exception:
-                pass
-        
-        # Clear references to allow garbage collection
-        self.animation_frames = []
-        self.animation_label = None
-        
-        # Call cleanup
-        self._cleanup_resources()
-        
-        # Destroy window
-        self.window.destroy()
-
-    def schedule_after(self, delay, callback):
-        """Schedule an after callback and track its ID
+    def _calculate_basic_statistics(self, game_history):
+        """Calculate basic statistics from game history
         
         Args:
-            delay: Delay in milliseconds
-            callback: Function to call
+            game_history (dict): Dictionary of game history data
             
         Returns:
-            The after ID
+            dict: Statistics data
         """
-        if not hasattr(self, 'window') or not self.window.winfo_exists():
-            return None
+        # Initialize stats
+        stats = {
+            "total_games": len(game_history),
+            "player_wins": {1: 0, 2: 0},
+            "draws": 0,
+            "incomplete": 0,
+            "avg_moves": 0,
+            "recent_games": []
+        }
+        
+        # Process each game
+        total_moves = 0
+        for game_id, game in game_history.items():
+            winner = game.get('winner')
             
-        after_id = self.window.after(delay, callback)
-        self.after_ids.append(after_id)
-        return after_id
-
-    def cancel_after(self, after_id):
-        """Cancel an after callback
+            if winner in [1, 2]:
+                stats["player_wins"][winner] += 1
+            elif winner == 0:
+                stats["draws"] += 1
+            else:
+                stats["incomplete"] += 1
+            
+            # Count moves
+            moves = game.get('moves', [])
+            total_moves += len(moves)
         
-        Args:
-            after_id: ID of callback to cancel
-        """
-        if after_id in self.after_ids:
-            try:
-                self.window.after_cancel(after_id)
-                self.after_ids.remove(after_id)
-            except Exception:
-                pass
-
-    def _process_ui_updates(self):
-        """Process queued UI updates on the main thread"""
-        if not hasattr(self, 'ui_updates'):
-            self.ui_updates = []
+        # Calculate average moves
+        if stats["total_games"] > 0:
+            stats["avg_moves"] = total_moves / stats["total_games"]
         
-        # Check if we have any pending updates
-        while self.ui_updates and hasattr(self, 'window') and self.window.winfo_exists():
-            status_text, progress_value = self.ui_updates.pop(0)
-            self._update_progress(status_text, progress_value)
-
+        # Get most recent games (up to 5)
+        try:
+            sorted_game_ids = sorted(
+                game_history.keys(),
+                key=lambda gid: game_history[gid].get('timestamp', gid),
+                reverse=True
+            )
+            
+            for game_id in sorted_game_ids[:5]:
+                game = game_history[game_id]
+                stats["recent_games"].append({
+                    "id": game_id,
+                    "winner": game.get('winner'),
+                    "moves": len(game.get('moves', []))
+                })
+        except Exception as e:
+            print(f"Error getting recent games: {e}")
+        
+        return stats
 
 # For testing - run this file directly
 if __name__ == "__main__":

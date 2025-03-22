@@ -671,6 +671,12 @@ def force_exit_if_stuck(timeout=30):
                 debug(f"Heartbeat detected ({time_since_heartbeat:.1f}s ago), resetting monitor timeout")
                 start_time = time.time()  # Reset the timer
             
+            # Check if any UI is active and responsive
+            if is_any_ui_active() and get_ui_uptime() > 5.0:
+                # UI has been active for at least 5 seconds, probably not stuck
+                # Extend the timeout period or reset it
+                start_time = time.time()  # Reset the timer
+            
             # Check if we've exceeded the timeout
             if elapsed > timeout:
                 warning(f"\n\nFORCE EXIT: Application appears to be stuck for {timeout} seconds.")

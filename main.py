@@ -70,6 +70,8 @@ def add_main_menu_watchdog(menu_window):
     
     # Start the watchdog
     try:
+        # Update heartbeat immediately when watchdog is added
+        update_app_heartbeat()
         menu_window.after(5000, watchdog_check)
         info("Main menu watchdog started")
         return True

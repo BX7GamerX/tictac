@@ -1,590 +1,142 @@
-=== Tic Tac Toe Debug Log - Started 2025-03-22 09:58:21.223162 ===
+=== Tic Tac Toe Debug Log - Started 2025-03-22 11:21:51.215171 ===
 
-[2025-03-22 09:58:21.223] [INFO] [MAIN:MainThread] [debug_logger.info] Applying CustomTkinter patches for thread safety
-[2025-03-22 09:58:21.226] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Checking if we can continue starting up
-[2025-03-22 09:58:21.226] [INFO] [MAIN:MainThread] [debug_logger.info] About to import SplashScreen
-[2025-03-22 09:58:21.240] [INFO] [MAIN:MainThread] [debug_logger.info] About to import MainMenu
-[2025-03-22 09:58:21.351] [INFO] [MAIN:MainThread] [debug_logger.info] About to import GameDataManager
-[2025-03-22 09:58:21.354] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Starting force exit monitor with 60s timeout
-[2025-03-22 09:58:21.355] [INFO] [MAIN:MainThread] [debug_logger.info] Starting Tic Tac Toe application
-[2025-03-22 09:58:21.355] [INFO] [MAIN:MainThread] [debug_logger.info] Setting appearance mode to dark
-[2025-03-22 09:58:21.355] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.1s ago), resetting monitor timeout
-[2025-03-22 09:58:21.356] [INFO] [MAIN:MainThread] [debug_logger.info] Setting default color theme to blue
-[2025-03-22 09:58:21.357] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Set CustomTkinter appearance mode and color theme
-[2025-03-22 09:58:21.357] [INFO] [MAIN:MainThread] [debug_logger.info] Disabling automatic DPI awareness
-[2025-03-22 09:58:21.357] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Disabled automatic DPI awareness
-[2025-03-22 09:58:21.358] [INFO] [MAIN:MainThread] [debug_logger.info] Cleaning up stray after commands
-[2025-03-22 09:58:21.358] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Cleaned up stray after commands
-[2025-03-22 09:58:21.358] [INFO] [MAIN:MainThread] [debug_logger.info] Initializing data manager
-[2025-03-22 09:58:21.358] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Data manager initialized successfully
-[2025-03-22 09:58:21.359] [INFO] [MAIN:MainThread] [debug_logger.info] Initializing task manager
-[2025-03-22 09:58:21.359] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Task manager initialized successfully
-[2025-03-22 09:58:21.359] [INFO] [MAIN:MainThread] [debug_logger.info] Checking for cached data
-[2025-03-22 09:58:21.360] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Checking for cached data at: /home/not_him/projects/hybrid/tictac/game_data/cached_data.pkl
-[2025-03-22 09:58:21.480] [SUCCESS] [MAIN:MainThread] [debug_logger.success] Loaded cached game data
-[2025-03-22 09:58:21.481] [INFO] [MAIN:MainThread] [debug_logger.info] Showing splash screen
-[2025-03-22 09:58:21.481] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting splash screen
-[2025-03-22 09:58:22.007] [INFO] [MAIN:MainThread] [debug_logger.info] Setting up UI thread watchdog timer
-[2025-03-22 09:58:22.008] [INFO] [MAIN:MainThread] [debug_logger.info] About to call splash.start()
-[2025-03-22 09:58:22.008] [DEBUG] [MAIN:MainThread] [debug_logger.debug] SplashScreen.start(): Initializing splash screen
-[2025-03-22 09:58:22.008] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting background loading thread
-[2025-03-22 09:58:22.008] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Set up UI watchdog with ID after#3
-[2025-03-22 09:58:22.009] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting the progress bar
-[2025-03-22 09:58:22.019] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Loading animation
-[2025-03-22 09:58:22.021] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Canceled UI watchdog - UI operations succeeded
-[2025-03-22 09:58:22.022] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting splash screen mainloop
-[2025-03-22 09:58:22.356] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.1s ago), resetting monitor timeout
-[2025-03-22 09:58:22.424] [DEBUG] [BG:Thread-5 (_load_data)] [debug_logger.debug] Checking for AI model at: /home/not_him/projects/hybrid/tictac/ai_model.pkl
-[2025-03-22 09:58:22.425] [DEBUG] [BG:Thread-5 (_load_data)] [debug_logger.debug] AI model file size: 0 bytes
-[2025-03-22 09:58:22.425] [WARNING] [BG:Thread-5 (_load_data)] [debug_logger.warning] AI model file is empty, will need retraining
-[2025-03-22 09:58:23.357] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.1s ago), resetting monitor timeout
-[2025-03-22 09:58:24.357] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (3.1s ago), resetting monitor timeout
-[2025-03-22 09:58:24.854] [INFO] [BG:EmergencyTimeoutMonitor] [debug_logger.info] Early timeout monitor detected active UI for 2.4s, stopping monitoring
-[2025-03-22 09:58:25.358] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (4.1s ago), resetting monitor timeout
-[2025-03-22 09:58:26.359] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (5.1s ago), resetting monitor timeout
-[2025-03-22 09:58:27.008] [ERROR] [MAIN:MainThread] [debug_logger.error] WATCHDOG: UI thread may be blocked in splash screen start
-[2025-03-22 09:58:27.008] [WARNING] [MAIN:MainThread] [debug_logger.warning] WATCHDOG: Attempting recovery...
-[2025-03-22 09:58:27.008] [INFO] [MAIN:MainThread] [debug_logger.info] WATCHDOG: Executing emergency callback with available data
-[2025-03-22 09:58:27.008] [TRANSITION] [MAIN:MainThread] [debug_logger.transition] Loading complete callback triggered, launching main menu
-[2025-03-22 09:58:27.008] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting main menu launch procedure - data keys: ['assets_manager', 'preloaded_assets', 'background_animation', 'move_tracker_system', 'game_history', 'data_manager', 'ai_player', 'game', 'game_stats', 'preloaded_menu']
-[2025-03-22 09:58:27.009] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: assets_manager
-[2025-03-22 09:58:27.009] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added assets_manager to data manager
-[2025-03-22 09:58:27.009] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: preloaded_assets
-[2025-03-22 09:58:27.009] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added preloaded_assets to data manager
-[2025-03-22 09:58:27.009] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: background_animation
-[2025-03-22 09:58:27.017] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added background_animation to data manager
-[2025-03-22 09:58:27.017] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: move_tracker_system
-[2025-03-22 09:58:27.017] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added move_tracker_system to data manager
-[2025-03-22 09:58:27.017] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: game_history
-[2025-03-22 09:58:27.019] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added game_history to data manager
-[2025-03-22 09:58:27.020] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: data_manager
-[2025-03-22 09:58:27.020] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added data_manager to data manager
-[2025-03-22 09:58:27.020] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: ai_player
-[2025-03-22 09:58:27.021] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added ai_player to data manager
-[2025-03-22 09:58:27.021] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: game
-[2025-03-22 09:58:27.021] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added game to data manager
-[2025-03-22 09:58:27.021] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: game_stats
-[2025-03-22 09:58:27.021] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added game_stats to data manager
-[2025-03-22 09:58:27.022] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting background task to save cached data
-[2025-03-22 09:58:27.022] [DEBUG] [BG:Thread-7 (task_wrapper)] [debug_logger.debug] Converting assets_manager to pickle-safe format
-[2025-03-22 09:58:27.022] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Preloaded menu available: True
-[2025-03-22 09:58:27.026] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Checking if preloaded menu window exists
-[2025-03-22 09:58:27.129] [DEBUG] [BG:Thread-7 (task_wrapper)] [debug_logger.debug] Skipping pickling of data_manager (self-reference)
-[2025-03-22 09:58:27.130] [DEBUG] [BG:Thread-7 (task_wrapper)] [debug_logger.debug] Preparing to save cache data with pickle-safe method
-[2025-03-22 09:58:27.360] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (6.1s ago), resetting monitor timeout
-[2025-03-22 09:58:27.380] [SUCCESS] [BG:Thread-7 (task_wrapper)] [debug_logger.success] Saved cache data successfully
-[2025-03-22 09:58:28.032] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Preloaded menu window valid: False
-[2025-03-22 09:58:28.032] [TRANSITION] [MAIN:MainThread] [debug_logger.transition] Creating new main menu instance
-[2025-03-22 09:58:28.032] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Initializing new MainMenu with data from data_manager
-[2025-03-22 09:58:28.360] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (7.1s ago), resetting monitor timeout
-[2025-03-22 09:58:29.361] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (8.1s ago), resetting monitor timeout
-[2025-03-22 09:58:29.570] [SUCCESS] [MAIN:MainThread] [debug_logger.success] Main menu created successfully
-[2025-03-22 09:58:29.570] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog started
-[2025-03-22 09:58:29.570] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting main menu mainloop
-[2025-03-22 09:58:29.571] [TRANSITION] [MAIN:MainThread] [debug_logger.transition] MainMenu.run() called
-[2025-03-22 09:58:29.571] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting main menu mainloop
-[2025-03-22 09:58:29.571] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting standard mainloop with safety checks
-[2025-03-22 09:58:30.362] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (9.1s ago), resetting monitor timeout
-[2025-03-22 09:58:32.364] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:33.366] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:34.366] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:34.571] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:58:34.571] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #3)
-[2025-03-22 09:58:35.367] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:36.369] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:37.371] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:38.372] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:39.373] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:39.572] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:58:39.573] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #6)
-[2025-03-22 09:58:40.374] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:41.375] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:42.375] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:43.376] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:44.377] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:44.574] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:58:44.575] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #10)
-[2025-03-22 09:58:45.378] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:46.379] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:47.379] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:48.380] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:49.381] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:49.575] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:58:49.575] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #13)
-[2025-03-22 09:58:50.381] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:51.358] [INFO] [MAIN:MainThread] [debug_logger.info] Signal timeout triggered but UI already active, ignoring
-[2025-03-22 09:58:51.382] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:52.382] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:53.383] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:54.384] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:54.579] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:58:54.579] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #17)
-[2025-03-22 09:58:55.385] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:56.385] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:57.386] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:58.387] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:58:59.388] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:58:59.583] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:58:59.584] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #20)
-[2025-03-22 09:59:00.389] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:01.390] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:02.391] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:03.392] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:04.393] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:04.585] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:04.585] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #24)
-[2025-03-22 09:59:05.394] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:06.395] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:07.396] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:08.397] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:09.398] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:09.589] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:09.590] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #27)
-[2025-03-22 09:59:10.399] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:11.400] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:12.400] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:13.402] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:14.402] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:14.591] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:14.591] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #31)
-[2025-03-22 09:59:15.404] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:16.405] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:17.407] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:18.407] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:19.408] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:19.592] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:19.593] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #34)
-[2025-03-22 09:59:20.409] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:21.410] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:22.411] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:23.412] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:24.413] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:24.594] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:24.594] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #38)
-[2025-03-22 09:59:25.414] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:26.416] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:27.417] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:28.418] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:29.419] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:29.595] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:29.596] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #41)
-[2025-03-22 09:59:30.421] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:31.422] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:32.422] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:33.423] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:34.425] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:34.596] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:34.597] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #45)
-[2025-03-22 09:59:35.425] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:36.427] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:37.427] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:38.429] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:39.430] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:39.600] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:39.600] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #48)
-[2025-03-22 09:59:40.431] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:41.433] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:42.434] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:43.436] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:44.437] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:44.601] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:44.602] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #52)
-[2025-03-22 09:59:45.438] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:46.439] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:47.440] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:48.441] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:49.441] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:49.602] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:49.603] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #55)
-[2025-03-22 09:59:50.442] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:51.442] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:52.443] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:53.443] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:54.445] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:54.604] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:54.605] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #59)
-[2025-03-22 09:59:55.446] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:56.447] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:57.448] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:58.449] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 09:59:59.450] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 09:59:59.606] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 09:59:59.606] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #62)
-[2025-03-22 10:00:00.450] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:01.451] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:02.452] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:03.453] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:04.454] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:04.607] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:04.608] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #66)
-[2025-03-22 10:00:05.455] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:06.455] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:07.456] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:08.457] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:09.458] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:09.609] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:09.609] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #69)
-[2025-03-22 10:00:10.459] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:11.460] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:12.461] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:13.462] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:14.464] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:14.610] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:14.611] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #73)
-[2025-03-22 10:00:15.465] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:16.466] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:17.467] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:18.468] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:19.469] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:19.612] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:19.613] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #76)
-[2025-03-22 10:00:20.469] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:21.470] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.8s ago), resetting monitor timeout
-[2025-03-22 10:00:22.471] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.8s ago), resetting monitor timeout
-[2025-03-22 10:00:23.472] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:24.474] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:24.614] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:24.615] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #80)
-[2025-03-22 10:00:25.475] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:26.475] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:27.477] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:28.478] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:29.479] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:29.616] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:29.616] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #83)
-[2025-03-22 10:00:30.480] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:31.481] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:32.482] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:33.483] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:34.485] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:34.617] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:34.618] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #87)
-[2025-03-22 10:00:35.486] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:36.486] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:37.488] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:38.488] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:39.490] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:39.622] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:39.622] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #90)
-[2025-03-22 10:00:40.492] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:41.493] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:42.494] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:43.495] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:44.496] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:44.623] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:44.623] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #94)
-[2025-03-22 10:00:45.497] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:46.498] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:47.499] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:48.500] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:49.501] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:49.624] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:49.625] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #97)
-[2025-03-22 10:00:50.502] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:51.503] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:52.503] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:53.504] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:54.505] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:54.626] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:54.626] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #101)
-[2025-03-22 10:00:55.506] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:56.507] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:57.508] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:58.510] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:00:59.511] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:00:59.627] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:00:59.628] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #104)
-[2025-03-22 10:01:00.512] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:01.513] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:02.514] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:03.515] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:04.516] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:04.629] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:04.629] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #108)
-[2025-03-22 10:01:05.517] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:06.519] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:07.521] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:08.522] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:09.523] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:09.630] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:09.631] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #111)
-[2025-03-22 10:01:10.523] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:11.525] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:12.526] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:13.527] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:14.528] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:14.632] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:14.632] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #115)
-[2025-03-22 10:01:15.529] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:16.530] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:17.531] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:18.532] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:19.532] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:19.633] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:19.634] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #118)
-[2025-03-22 10:01:20.534] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:21.534] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:22.536] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:23.537] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:24.539] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:24.634] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:24.635] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #122)
-[2025-03-22 10:01:25.539] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:26.540] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:27.541] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:28.542] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:29.543] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:29.636] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:29.637] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #125)
-[2025-03-22 10:01:30.544] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:31.547] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:32.547] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:33.548] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:34.550] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:34.638] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:34.639] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #129)
-[2025-03-22 10:01:35.551] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:36.553] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:37.554] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:38.555] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:39.557] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:39.639] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:39.640] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #132)
-[2025-03-22 10:01:40.558] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:41.558] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:42.559] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:43.560] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:44.562] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:44.641] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:44.642] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #136)
-[2025-03-22 10:01:45.563] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:46.564] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:47.565] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:48.567] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:49.568] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:49.644] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:49.644] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #139)
-[2025-03-22 10:01:50.570] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:51.571] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:52.571] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:53.572] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:54.572] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:54.645] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:54.645] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #143)
-[2025-03-22 10:01:55.573] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:56.574] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:57.575] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:58.576] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:01:59.577] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:01:59.646] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:01:59.647] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #146)
-[2025-03-22 10:02:00.578] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:01.579] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:02.580] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:03.581] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:04.582] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:04.648] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:04.648] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #150)
-[2025-03-22 10:02:05.584] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:06.585] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:07.586] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:08.586] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:09.587] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:09.649] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:09.650] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #153)
-[2025-03-22 10:02:10.589] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:11.590] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:12.591] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:13.592] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:14.593] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:14.651] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:14.651] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #157)
-[2025-03-22 10:02:15.595] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:16.596] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:17.597] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:18.598] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:19.599] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:19.652] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:19.653] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #160)
-[2025-03-22 10:02:20.599] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:21.600] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:22.601] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:23.602] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:24.602] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:24.657] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:24.658] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #164)
-[2025-03-22 10:02:25.603] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:26.604] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:27.605] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:28.606] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:29.608] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:29.661] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:29.661] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #167)
-[2025-03-22 10:02:30.609] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:31.610] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:32.611] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:33.612] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:34.612] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:34.662] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:34.662] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #171)
-[2025-03-22 10:02:35.613] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:02:36.614] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:37.615] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:38.616] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:39.617] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:39.663] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:39.664] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #174)
-[2025-03-22 10:02:40.618] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:41.619] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:42.620] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:43.621] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:44.622] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:44.665] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:44.666] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #178)
-[2025-03-22 10:02:45.623] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:02:46.624] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:47.625] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:48.627] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:49.629] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:49.667] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:49.667] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #181)
-[2025-03-22 10:02:50.630] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:51.631] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:52.631] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:53.632] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:54.633] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:54.670] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:54.671] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #185)
-[2025-03-22 10:02:55.634] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:02:56.635] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:57.636] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:58.637] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:02:59.638] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:02:59.671] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:02:59.671] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #188)
-[2025-03-22 10:03:00.639] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:03:01.640] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:03:02.641] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:03:03.641] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:03:04.642] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:03:04.672] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:04.673] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #192)
-[2025-03-22 10:03:05.643] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:06.645] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:03:07.646] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.9s ago), resetting monitor timeout
-[2025-03-22 10:03:08.646] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.9s ago), resetting monitor timeout
-[2025-03-22 10:03:09.647] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:09.674] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:09.674] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #195)
-[2025-03-22 10:03:10.648] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:11.649] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:12.650] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:13.651] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:14.652] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:14.677] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:14.678] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #199)
-[2025-03-22 10:03:15.653] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:16.655] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:17.655] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:18.656] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:19.657] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:19.678] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:19.679] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #202)
-[2025-03-22 10:03:20.659] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:21.659] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:22.660] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:23.661] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:24.662] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:24.681] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:24.682] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #206)
-[2025-03-22 10:03:25.663] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:26.664] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:27.665] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:28.666] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:29.667] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:29.683] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:29.684] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #209)
-[2025-03-22 10:03:30.668] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:31.669] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:32.671] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:33.672] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:34.672] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:34.684] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:34.685] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #213)
-[2025-03-22 10:03:35.038] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Checking for AI model at: /home/not_him/projects/hybrid/tictac/ai_model.pkl
-[2025-03-22 10:03:35.039] [DEBUG] [MAIN:MainThread] [debug_logger.debug] AI model file size: 0 bytes
-[2025-03-22 10:03:35.039] [WARNING] [MAIN:MainThread] [debug_logger.warning] AI model file is empty, will need retraining
-[2025-03-22 10:03:35.673] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
-[2025-03-22 10:03:36.674] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.0s ago), resetting monitor timeout
-[2025-03-22 10:03:37.675] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (3.0s ago), resetting monitor timeout
-[2025-03-22 10:03:38.543] [WARNING] [MAIN:MainThread] [debug_logger.warning] UI thread may be stuck - 3.7s since last heartbeat
-[2025-03-22 10:03:38.676] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (4.0s ago), resetting monitor timeout
-[2025-03-22 10:03:39.677] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (5.0s ago), resetting monitor timeout
-[2025-03-22 10:03:40.271] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:40.271] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #214)
-[2025-03-22 10:03:40.282] [INFO] [MAIN:MainThread] [debug_logger.info] Processed pending events to unstick UI
-[2025-03-22 10:03:40.678] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:41.679] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:42.679] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:43.681] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:44.682] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:45.272] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:45.273] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #218)
-[2025-03-22 10:03:45.683] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:46.684] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:47.684] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:48.685] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:49.686] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:50.273] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:50.274] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #221)
-[2025-03-22 10:03:50.686] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:51.687] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:52.687] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:53.687] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:54.688] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:55.275] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:03:55.276] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #225)
-[2025-03-22 10:03:55.689] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:56.690] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:57.691] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:03:58.692] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:03:59.692] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:04:00.276] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:04:00.277] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #228)
-[2025-03-22 10:04:00.693] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:04:01.695] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:04:02.695] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:04:03.696] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.4s ago), resetting monitor timeout
-[2025-03-22 10:04:04.697] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
-[2025-03-22 10:04:05.278] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:04:05.278] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #232)
-[2025-03-22 10:04:05.697] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.4s ago), resetting monitor timeout
-[2025-03-22 10:04:06.698] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
-[2025-03-22 10:04:07.699] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
-[2025-03-22 10:04:08.700] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
-[2025-03-22 10:04:09.700] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
-[2025-03-22 10:04:10.702] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.2s ago), resetting monitor timeout
-[2025-03-22 10:04:11.635] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:04:11.638] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #235)
-[2025-03-22 10:04:11.705] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.1s ago), resetting monitor timeout
-[2025-03-22 10:04:12.706] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.1s ago), resetting monitor timeout
-[2025-03-22 10:04:13.706] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.1s ago), resetting monitor timeout
-[2025-03-22 10:04:14.707] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.1s ago), resetting monitor timeout
-[2025-03-22 10:04:15.708] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.1s ago), resetting monitor timeout
-[2025-03-22 10:04:16.642] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
-[2025-03-22 10:04:16.642] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #239)
-[2025-03-22 10:04:16.708] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.1s ago), resetting monitor timeout
-[2025-03-22 10:04:17.709] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.1s ago), resetting monitor timeout
-[2025-03-22 10:04:18.709] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.1s ago), resetting monitor timeout
-[2025-03-22 10:04:19.710] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.1s ago), resetting monitor timeout
-[2025-03-22 10:04:20.711] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (3.1s ago), resetting monitor timeout
-[2025-03-22 10:04:21.712] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (4.1s ago), resetting monitor timeout
-[2025-03-22 10:04:22.712] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (5.1s ago), resetting monitor timeout
-[2025-03-22 10:04:23.713] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (6.1s ago), resetting monitor timeout
-[2025-03-22 10:04:24.713] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (7.1s ago), resetting monitor timeout
-[2025-03-22 10:04:25.714] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (8.1s ago), resetting monitor timeout
-[2025-03-22 10:04:26.714] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (9.1s ago), resetting monitor timeout
-[2025-03-22 10:05:26.726] [WARNING] [BG:ForceExitMonitor] [debug_logger.warning] 
-
-FORCE EXIT: Application appears to be stuck for 60 seconds.
-[2025-03-22 10:05:26.727] [WARNING] [BG:ForceExitMonitor] [debug_logger.warning] No obvious deadlock but application is unresponsive. Forcing exit.
+[2025-03-22 11:21:51.216] [INFO] [MAIN:MainThread] [debug_logger.info] Applying CustomTkinter patches for thread safety
+[2025-03-22 11:21:51.219] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Checking if we can continue starting up
+[2025-03-22 11:21:51.219] [INFO] [MAIN:MainThread] [debug_logger.info] About to import SplashScreen
+[2025-03-22 11:21:51.227] [INFO] [MAIN:MainThread] [debug_logger.info] About to import MainMenu
+[2025-03-22 11:21:51.535] [INFO] [MAIN:MainThread] [debug_logger.info] About to import GameDataManager
+[2025-03-22 11:21:51.536] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Starting force exit monitor with 60s timeout
+[2025-03-22 11:21:51.536] [INFO] [MAIN:MainThread] [debug_logger.info] Starting Tic Tac Toe application
+[2025-03-22 11:21:51.536] [INFO] [MAIN:MainThread] [debug_logger.info] Setting appearance mode to dark
+[2025-03-22 11:21:51.536] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.3s ago), resetting monitor timeout
+[2025-03-22 11:21:51.537] [INFO] [MAIN:MainThread] [debug_logger.info] Setting default color theme to blue
+[2025-03-22 11:21:51.537] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Set CustomTkinter appearance mode and color theme
+[2025-03-22 11:21:51.537] [INFO] [MAIN:MainThread] [debug_logger.info] Disabling automatic DPI awareness
+[2025-03-22 11:21:51.537] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Disabled automatic DPI awareness
+[2025-03-22 11:21:51.538] [INFO] [MAIN:MainThread] [debug_logger.info] Cleaning up stray after commands
+[2025-03-22 11:21:51.538] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Cleaned up stray after commands
+[2025-03-22 11:21:51.538] [INFO] [MAIN:MainThread] [debug_logger.info] Initializing data manager
+[2025-03-22 11:21:51.538] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Data manager initialized successfully
+[2025-03-22 11:21:51.538] [INFO] [MAIN:MainThread] [debug_logger.info] Initializing task manager
+[2025-03-22 11:21:51.538] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Task manager initialized successfully
+[2025-03-22 11:21:51.538] [INFO] [MAIN:MainThread] [debug_logger.info] Checking for cached data
+[2025-03-22 11:21:51.538] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Checking for cached data at: /home/not_him/projects/hybrid/tictac/game_data/cached_data.pkl
+[2025-03-22 11:21:51.900] [SUCCESS] [MAIN:MainThread] [debug_logger.success] Loaded cached game data
+[2025-03-22 11:21:51.900] [INFO] [MAIN:MainThread] [debug_logger.info] Showing splash screen
+[2025-03-22 11:21:51.900] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting splash screen
+[2025-03-22 11:21:52.537] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.3s ago), resetting monitor timeout
+[2025-03-22 11:21:52.622] [INFO] [MAIN:MainThread] [debug_logger.info] Setting up UI thread watchdog timer
+[2025-03-22 11:21:52.623] [INFO] [MAIN:MainThread] [debug_logger.info] About to call splash.start()
+[2025-03-22 11:21:52.623] [DEBUG] [MAIN:MainThread] [debug_logger.debug] SplashScreen.start(): Initializing splash screen
+[2025-03-22 11:21:52.623] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting background loading thread
+[2025-03-22 11:21:52.624] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Set up UI watchdog with ID after#3
+[2025-03-22 11:21:52.624] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting the progress bar
+[2025-03-22 11:21:52.627] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Loading animation
+[2025-03-22 11:21:52.633] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Canceled UI watchdog - UI operations succeeded
+[2025-03-22 11:21:52.634] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting splash screen mainloop
+[2025-03-22 11:21:53.538] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.3s ago), resetting monitor timeout
+[2025-03-22 11:21:54.538] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (3.3s ago), resetting monitor timeout
+[2025-03-22 11:21:54.853] [INFO] [BG:EmergencyTimeoutMonitor] [debug_logger.info] Early timeout monitor detected active UI for 2.2s, stopping monitoring
+[2025-03-22 11:21:55.539] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (4.3s ago), resetting monitor timeout
+[2025-03-22 11:21:56.540] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (5.3s ago), resetting monitor timeout
+[2025-03-22 11:21:57.541] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (6.3s ago), resetting monitor timeout
+[2025-03-22 11:21:58.244] [ERROR] [MAIN:MainThread] [debug_logger.error] WATCHDOG: UI thread may be blocked in splash screen start
+[2025-03-22 11:21:58.246] [WARNING] [MAIN:MainThread] [debug_logger.warning] WATCHDOG: Attempting recovery...
+[2025-03-22 11:21:58.246] [INFO] [MAIN:MainThread] [debug_logger.info] WATCHDOG: Executing emergency callback with available data
+[2025-03-22 11:21:58.246] [TRANSITION] [MAIN:MainThread] [debug_logger.transition] Loading complete callback triggered, launching main menu
+[2025-03-22 11:21:58.246] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting main menu launch procedure - data keys: ['assets_manager', 'preloaded_assets', 'background_animation', 'move_tracker_system']
+[2025-03-22 11:21:58.246] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: assets_manager
+[2025-03-22 11:21:58.246] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added assets_manager to data manager
+[2025-03-22 11:21:58.247] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: preloaded_assets
+[2025-03-22 11:21:58.247] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added preloaded_assets to data manager
+[2025-03-22 11:21:58.247] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: background_animation
+[2025-03-22 11:21:58.253] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added background_animation to data manager
+[2025-03-22 11:21:58.254] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Setting data manager key: move_tracker_system
+[2025-03-22 11:21:58.254] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Added move_tracker_system to data manager
+[2025-03-22 11:21:58.254] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting background task to save cached data
+[2025-03-22 11:21:58.255] [DEBUG] [BG:Thread-6 (task_wrapper)] [debug_logger.debug] Converting assets_manager to pickle-safe format
+[2025-03-22 11:21:58.255] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Preloaded menu available: False
+[2025-03-22 11:21:58.256] [TRANSITION] [MAIN:MainThread] [debug_logger.transition] Creating new main menu instance
+[2025-03-22 11:21:58.256] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Initializing new MainMenu with data from data_manager
+[2025-03-22 11:21:58.371] [DEBUG] [BG:Thread-6 (task_wrapper)] [debug_logger.debug] Preparing to save cache data with pickle-safe method
+[2025-03-22 11:21:58.542] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (7.3s ago), resetting monitor timeout
+[2025-03-22 11:21:59.542] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (8.3s ago), resetting monitor timeout
+[2025-03-22 11:22:00.277] [SUCCESS] [BG:Thread-6 (task_wrapper)] [debug_logger.success] Saved cache data successfully
+[2025-03-22 11:22:00.543] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (9.3s ago), resetting monitor timeout
+[2025-03-22 11:22:01.017] [DEBUG] [BG:Thread-5 (_load_data)] [debug_logger.debug] Checking for AI model at: /home/not_him/projects/hybrid/tictac/ai_model.pkl
+[2025-03-22 11:22:01.018] [DEBUG] [BG:Thread-5 (_load_data)] [debug_logger.debug] AI model file size: 0 bytes
+[2025-03-22 11:22:01.018] [WARNING] [BG:Thread-5 (_load_data)] [debug_logger.warning] AI model file is empty, will need retraining
+[2025-03-22 11:22:07.380] [SUCCESS] [MAIN:MainThread] [debug_logger.success] Main menu created successfully
+[2025-03-22 11:22:07.381] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog started
+[2025-03-22 11:22:07.381] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting main menu mainloop
+[2025-03-22 11:22:07.382] [TRANSITION] [MAIN:MainThread] [debug_logger.transition] MainMenu.run() called
+[2025-03-22 11:22:07.382] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting main menu mainloop
+[2025-03-22 11:22:07.382] [DEBUG] [MAIN:MainThread] [debug_logger.debug] Starting standard mainloop with safety checks
+[2025-03-22 11:22:07.544] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:08.550] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:09.550] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:10.552] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:11.553] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:12.381] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:12.382] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #4)
+[2025-03-22 11:22:12.553] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:13.554] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:14.556] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:15.556] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:16.557] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:17.383] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:17.383] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #7)
+[2025-03-22 11:22:17.558] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:18.558] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:19.559] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:20.559] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:21.544] [INFO] [MAIN:MainThread] [debug_logger.info] Signal timeout triggered but UI already active, ignoring
+[2025-03-22 11:22:21.560] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:22.384] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:22.384] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #11)
+[2025-03-22 11:22:22.560] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:23.561] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:24.563] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.2s ago), resetting monitor timeout
+[2025-03-22 11:22:25.564] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.2s ago), resetting monitor timeout
+[2025-03-22 11:22:26.565] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (3.2s ago), resetting monitor timeout
+[2025-03-22 11:22:27.569] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (4.2s ago), resetting monitor timeout
+[2025-03-22 11:22:28.571] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (5.2s ago), resetting monitor timeout
+[2025-03-22 11:22:29.572] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (6.2s ago), resetting monitor timeout
+[2025-03-22 11:22:30.573] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (7.2s ago), resetting monitor timeout
+[2025-03-22 11:22:31.574] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (8.2s ago), resetting monitor timeout
+[2025-03-22 11:22:32.574] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (9.2s ago), resetting monitor timeout
+[2025-03-22 11:22:32.883] [WARNING] [MAIN:MainThread] [debug_logger.warning] UI thread may be stuck - 7.8s since last heartbeat
+[2025-03-22 11:22:32.883] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:32.883] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #16)
+[2025-03-22 11:22:33.362] [INFO] [MAIN:MainThread] [debug_logger.info] Processed pending events to unstick UI
+[2025-03-22 11:22:33.575] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.0s ago), resetting monitor timeout
+[2025-03-22 11:22:34.576] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.0s ago), resetting monitor timeout
+[2025-03-22 11:22:35.578] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.0s ago), resetting monitor timeout
+[2025-03-22 11:22:36.578] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.0s ago), resetting monitor timeout
+[2025-03-22 11:22:37.579] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.0s ago), resetting monitor timeout
+[2025-03-22 11:22:37.887] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:37.887] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #39)
+[2025-03-22 11:22:38.579] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.5s ago), resetting monitor timeout
+[2025-03-22 11:22:39.580] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:40.581] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.5s ago), resetting monitor timeout
+[2025-03-22 11:22:41.581] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:42.582] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.5s ago), resetting monitor timeout
+[2025-03-22 11:22:42.888] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:42.889] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #53)
+[2025-03-22 11:22:43.582] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:44.583] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.5s ago), resetting monitor timeout
+[2025-03-22 11:22:45.583] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:46.585] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.0s ago), resetting monitor timeout
+[2025-03-22 11:22:47.586] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.2s ago), resetting monitor timeout
+[2025-03-22 11:22:47.908] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu watchdog check running
+[2025-03-22 11:22:47.910] [INFO] [MAIN:MainThread] [debug_logger.info] Main menu is responsive, watchdog rescheduled (heartbeat #64)
+[2025-03-22 11:22:48.590] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (0.7s ago), resetting monitor timeout
+[2025-03-22 11:22:49.590] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (1.7s ago), resetting monitor timeout
+[2025-03-22 11:22:50.591] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (2.7s ago), resetting monitor timeout
+[2025-03-22 11:22:51.592] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (3.7s ago), resetting monitor timeout
+[2025-03-22 11:22:52.592] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (4.7s ago), resetting monitor timeout
+[2025-03-22 11:22:53.597] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (5.7s ago), resetting monitor timeout
+[2025-03-22 11:22:54.598] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (6.7s ago), resetting monitor timeout
+[2025-03-22 11:22:55.600] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (7.7s ago), resetting monitor timeout
+[2025-03-22 11:22:56.601] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (8.7s ago), resetting monitor timeout
+[2025-03-22 11:22:57.605] [DEBUG] [BG:ForceExitMonitor] [debug_logger.debug] Heartbeat detected (9.7s ago), resetting monitor timeout
