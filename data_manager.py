@@ -7,6 +7,8 @@ from collections import defaultdict
 class GameDataManager:
     """Centralized manager for game data that can be passed between modules"""
     
+    _instance = None
+
     def __init__(self, preloaded_data=None):
         """Initialize the data manager
         
@@ -23,6 +25,17 @@ class GameDataManager:
                 self.data['game_history'] = {}
             if 'game_stats' not in self.data:
                 self.data['game_stats'] = {}
+
+    @classmethod
+    def get_instance(cls):
+        """Get the singleton instance of the data manager
+        
+        Returns:
+            GameDataManager: The singleton instance
+        """
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
     
     def get(self, key, default=None):
         """Thread-safe access to get data
@@ -141,12 +154,11 @@ class GameDataManager:
             if directory and not os.path.exists(directory):
                 os.makedirs(directory)
             
-            # Serialize data
-            with self.data_lock:
-                data_copy = dict(self.data)  # Make a copy to avoid lock during file write
+            # Get a pickle-safe version of the data
+            pickle_safe_data = self.get_pickle_safe_data()
             
             with open(filename, 'wb') as f:
-                pickle.dump(data_copy, f)
+                pickle.dump(pickle_safe_data, f)
             
             return True
         except Exception as e:
@@ -189,6 +201,74 @@ class GameDataManager:
         """
         with self.data_lock:
             return dict(self.data)
+    
+    def get_pickle_safe_data(self):
+        """Get a pickle-safe copy of all data
+        
+        Returns:
+            dict: Copy of data with unpicklable objects removed/replaced
+        """
+        from debug_logger import debug, warning
+        
+        with self.data_lock:
+            # Make a shallow copy first
+            safe_data = {}
+            
+            # Process each item
+            for key, value in self.data.items():
+                # Skip known unpicklable objects
+                if key == 'data_manager':
+                    debug(f"Skipping pickling of data_manager (self-reference)")
+                    continue
+                    
+                try:
+                    # Try to make complex objects pickle-safe
+                    if key == 'assets_manager':
+                        debug(f"Converting assets_manager to pickle-safe format")
+                        # For assets_manager, just store its cache paths or similar attributes
+                        if hasattr(value, 'image_cache'):
+                            safe_data[key] = {'image_cache_keys': list(value.image_cache.keys())}
+                        else:
+                            safe_data[key] = {'type': 'AssetManager'}
+                        continue
+                    
+                    # For move_tracker_system, just store the class name
+                    if key == 'move_tracker_system':
+                        safe_data[key] = {'type': value.__name__ if hasattr(value, '__name__') else 'GameMoveTracker'}
+                        continue
+                    
+                    # For AI player, store without the model if it has lock attributes
+                    if key == 'ai_player':
+                        if hasattr(value, 'model'):
+                            # Store without model to avoid pickle issues
+                            safe_data[key] = {'type': 'AIPlayer', 'has_model': hasattr(value, 'model_exists') and value.model_exists()}
+                        else:
+                            safe_data[key] = {'type': 'AIPlayer', 'has_model': False}
+                        continue
+                    
+                    # For normal game data, store directly
+                    if key in ['game_history', 'game_stats']:
+                        safe_data[key] = value
+                        continue
+                    
+                    # For game instance, store minimal info
+                    if key == 'game':
+                        safe_data[key] = {'type': 'TicTacToeGame'}
+                        continue
+                    
+                    # For other data, try to store directly but skip on error
+                    try:
+                        import pickle
+                        # Test if picklable with a small pickle operation
+                        pickle.dumps(value)
+                        safe_data[key] = value
+                    except Exception as e:
+                        warning(f"Skipping unpicklable data for key '{key}': {e}")
+                        
+                except Exception as e:
+                    warning(f"Error preparing '{key}' for pickling: {e}")
+            
+            return safe_data
     
     def update_game_history(self, game_id, game_data, notify=True):
         """Update a specific game in the history
@@ -263,3 +343,15 @@ class GameDataManager:
             return stats
         
         return self.update('game_stats', calculate_stats)
+    
+    def has(self, key):
+        """Check if a key exists in the data
+        
+        Args:
+            key (str): Key to check
+            
+        Returns:
+            bool: True if key exists, False otherwise
+        """
+        with self.data_lock:
+            return key in self.data

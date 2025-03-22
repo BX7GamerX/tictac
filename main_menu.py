@@ -13,13 +13,24 @@ from ai_trainer import AITrainingWindow
 class MainMenu:
     """Main menu with animated background and navigation buttons"""
     
-    def __init__(self, loaded_data=None):
+    def __init__(self, loaded_data=None, preload_only=False):
         """Initialize the main menu
         
         Args:
             loaded_data (dict): Pre-loaded data from splash screen
+            preload_only (bool): If True, only set up widgets without showing window
         """
         self.loaded_data = loaded_data or {}
+        self.preload_only = preload_only
+        self.is_visible = False
+        
+        # Set UI state tracking
+        from utils import mark_main_ui_active
+        mark_main_ui_active(True)
+        
+        # Add heartbeat tracking for deadlock detection
+        self.last_heartbeat = time.time()
+        self.heartbeat_counter = 0
         
         # Extract pre-loaded components
         self.assets_manager = self.loaded_data.get('assets_manager', AssetManager())
@@ -35,6 +46,10 @@ class MainMenu:
         self.window.title("Tic Tac Toe - Main Menu")
         self.window.geometry("800x600")
         self.window.configure(fg_color="#1E1E1E")
+        
+        # If preloading, withdraw the window immediately
+        if preload_only:
+            self.window.withdraw()
         
         # Set up animation variables
         self.animation_frames = []
@@ -61,6 +76,10 @@ class MainMenu:
     
     def on_closing(self):
         """Handle window closing event - cleanup resources"""
+        # Update UI state tracking
+        from utils import mark_main_ui_active
+        mark_main_ui_active(False)
+        
         # Stop animation
         self.animation_running = False
         
@@ -91,9 +110,18 @@ class MainMenu:
         Returns:
             The after ID
         """
-        after_id = self.window.after(delay, callback)
-        self.after_ids.append(after_id)
-        return after_id
+        try:
+            if hasattr(self, 'window') and self.window.winfo_exists():
+                after_id = self.window.after(delay, callback)
+                self.after_ids.append(after_id)
+                return after_id
+            return None
+        except RuntimeError as e:
+            if "main thread is not in main loop" in str(e):
+                print("Warning: Attempted to schedule callback from non-main thread")
+                return None
+            else:
+                raise
     
     def remove_after_id(self, after_id):
         """Remove an after ID from tracking list
@@ -122,8 +150,25 @@ class MainMenu:
             self.window.after(100, self._update_statistics_display)
     
     def _load_background_animation(self):
-        """Load the background animation in a separate thread"""
+        """Load the background animation in a separate thread - optimized version"""
         try:
+            # First check if we have preloaded animation frames
+            if self.loaded_data and 'background_animation' in self.loaded_data:
+                preloaded_frames = self.loaded_data['background_animation']
+                if preloaded_frames:
+                    print("Using preloaded background animation")
+                    # Thread-safe way to update UI on main thread
+                    try:
+                        # Don't try to access winfo_exists from a background thread
+                        from utils import schedule_on_main_thread
+                        schedule_on_main_thread(self.window, self._set_animation_frames, preloaded_frames)
+                        return
+                    except RuntimeError as e:
+                        if "main thread is not in main loop" in str(e):
+                            print("Warning: Can't update UI from background thread, will try alternative approach")
+                        else:
+                            raise
+            
             # Look for background animation
             animation_path = os.path.join(ASSETS_DIR, "background.gif")
             
@@ -167,10 +212,18 @@ class MainMenu:
                     # Update animation frames in main thread
                     self.schedule_after(0, lambda: self._set_animation_frames(frames))
         
+        except RuntimeError as e:
+            if "main thread is not in main loop" in str(e):
+                print("Warning: Threading issue in background animation loading. Will retry on main thread.")
+                # Queue this operation to be run on the main thread next time it's idle
+                from utils import schedule_on_main_thread
+                schedule_on_main_thread(self.window, self.load_background_animation)
+            else:
+                print(f"Error loading background animation: {e}")
         except Exception as e:
             print(f"Error loading background animation: {e}")
-            if hasattr(self, 'window') and self.window.winfo_exists():
-                self.schedule_after(0, lambda: self._update_status_display("Error loading background"))
+            from utils import schedule_on_main_thread
+            schedule_on_main_thread(self.window, self._update_status_display, "Error loading background")
     
     def _set_animation_frames(self, frames):
         """Update animation frames and start animation (called in main thread)"""
@@ -201,6 +254,10 @@ class MainMenu:
                 self.animation_running = False
                 return
                 
+            # Update heartbeat to show UI thread is responsive
+            self.last_heartbeat = time.time()
+            self.heartbeat_counter += 1
+                
             if self.animation_frames and len(self.animation_frames) > 0:
                 # Update to next frame
                 self.current_frame = (self.current_frame + 1) % len(self.animation_frames)
@@ -211,15 +268,68 @@ class MainMenu:
                 # Continue animation
                 if self.animation_running:
                     after_id = self.schedule_after(100, self.animate_background)
+                    
+                    # Every 10 frames, check if UI has been responsive
+                    if self.heartbeat_counter % 10 == 0:
+                        self._check_ui_responsiveness()
         except Exception as e:
             print(f"Error in animation: {e}")
             self.animation_running = False
     
+    def _check_ui_responsiveness(self):
+        """Check if the UI is responding properly"""
+        from debug_logger import warning, info
+        from utils import update_app_heartbeat
+        
+        # Calculate time since last heartbeat
+        time_since_heartbeat = time.time() - self.last_heartbeat
+        
+        # If more than 2 seconds since last heartbeat, UI might be stuck
+        if time_since_heartbeat > 2.0:
+            warning(f"UI thread may be stuck - {time_since_heartbeat:.1f}s since last heartbeat")
+            
+            # Try to process pending events to unstick the UI
+            try:
+                self.window.update()
+                info("Processed pending events to unstick UI")
+                # Reset heartbeat
+                self.last_heartbeat = time.time()
+                # Also update the application-wide heartbeat
+                update_app_heartbeat()
+            except Exception as e:
+                warning(f"Could not process events: {e}")
+        else:
+            # Update application heartbeat on regular checks too
+            update_app_heartbeat()
+        
+        # Schedule to run this check again periodically
+        self.schedule_after(2000, self._check_ui_responsiveness)
+        return True
+    
     def _process_game_statistics(self):
-        """Process game statistics in background thread"""
+        """Process game statistics in background thread - optimized version"""
         try:
+            # First check if we have preloaded statistics
+            if self.game_stats:
+                # Already have stats from preloaded data, just update UI
+                self.window.after(0, self._update_statistics_display)
+                return
+                
             # Update status in main thread
             self.window.after(0, lambda: self._update_status_display("Processing game statistics..."))
+            
+            # Try to get from data manager first
+            try:
+                from data_manager import GameDataManager
+                data_manager = GameDataManager.get_instance()
+                if data_manager and data_manager.has('game_stats'):
+                    # Use precomputed stats
+                    self.game_stats = data_manager.get('game_stats', {})
+                    print("Using preloaded game statistics")
+                    self.window.after(0, self._update_statistics_display)
+                    return
+            except Exception as e:
+                print(f"Error getting stats from data manager: {e}")
             
             # Calculate statistics
             stats = {
@@ -270,6 +380,15 @@ class MainMenu:
             # Store the calculated statistics
             self.game_stats = stats
             
+            # Store in data manager for future use
+            try:
+                from data_manager import GameDataManager
+                data_manager = GameDataManager.get_instance()
+                if data_manager:
+                    data_manager.set('game_stats', stats, notify=False)
+            except Exception:
+                pass
+                
             # Update UI in main thread
             self.window.after(0, self._update_statistics_display)
             
@@ -870,10 +989,276 @@ class MainMenu:
             print(f"Error showing dialog: {e}")
             return None
     
+    def show(self):
+        """Show the preloaded window"""
+        from debug_logger import transition, error, success, debug, warning, info
+        
+        transition("MainMenu.show() called - showing preloaded window")
+        info("Showing main menu window - this is where transitions often hang")
+        
+        if not self.is_visible:
+            try:
+                # Make sure window is fully prepared
+                if hasattr(self, 'window') and self.window.winfo_exists():
+                    debug("Window exists, preparing to show it")
+                    self.window.update_idletasks()
+                    
+                    # Center window on screen
+                    self._center_window()
+                    debug("Window centered on screen")
+                    
+                    # MODIFIED: Set alpha to 1.0 directly - skipping fade-in for reliability
+                    debug("Setting window to full opacity immediately for reliability")
+                    try:
+                        self.window.attributes("-alpha", 1.0)
+                    except Exception as e:
+                        warning(f"Could not set window alpha: {e}")
+                    
+                    # Show window directly with multiple approaches for reliability
+                    try:
+                        debug("Trying to deiconify window")
+                        self.window.deiconify()
+                        debug("Window deiconified successfully")
+                    except Exception as e:
+                        warning(f"Error deiconifying window: {e}")
+                        # Try alternative approach immediately
+                        try:
+                            debug("Trying wm_deiconify as alternative approach")
+                            self.window.wm_deiconify()
+                            debug("Used wm_deiconify successfully")
+                        except Exception as e2:
+                            error(f"Both deiconify methods failed: {e2}")
+                            try:
+                                # Final desperate approach
+                                debug("Trying state('normal') approach")
+                                self.window.state('normal')
+                                debug("State normal set successfully")
+                            except Exception as e3:
+                                error(f"All window show methods failed: {e3}")
+                    
+                    # Force update to ensure window is displayed
+                    try:
+                        debug("Forcing window update")
+                        self.window.update()
+                        debug("Window update completed")
+                    except Exception as e:
+                        warning(f"Cannot force window update: {e}")
+                    
+                    # Force focus after a tiny delay
+                    self.schedule_after(50, lambda: self._force_window_focus())
+                    
+                    # Mark visible immediately, don't wait for fade-in
+                    self.is_visible = True
+                    success("Main menu window marked as visible")
+                    
+                    # Monitor window visibility
+                    self.schedule_after(500, self._check_window_visibility)
+                    
+                else:
+                    error("Window does not exist or has been destroyed")
+                    # Report window state for debugging
+                    if hasattr(self, 'window'):
+                        debug(f"Window object exists but winfo_exists() is False")
+                    else:
+                        debug(f"Window object does not exist on MainMenu instance")
+            except Exception as e:
+                error(f"Error showing main menu: {e}")
+                import traceback
+                traceback.print_exc()
+                
+                # Last chance direct approach
+                try:
+                    error("Attempting last-chance direct window show")
+                    if hasattr(self, 'window'):
+                        self.window.withdraw()
+                        time.sleep(0.05)
+                        self.window.deiconify()
+                        self.is_visible = True
+                        success("Window shown with last-chance method")
+                except Exception as e2:
+                    error(f"Last-chance window show failed: {e2}")
+
+    def _force_window_focus(self):
+        """Force window to take focus with multiple approaches"""
+        from debug_logger import debug, warning
+        
+        try:
+            # Multiple approaches for different platforms
+            debug("Forcing window focus")
+            self.window.focus_force()
+            self.window.lift()
+            
+            # Try additional methods for stubborn platforms
+            try:
+                self.window.attributes('-topmost', True)
+                self.window.update()
+                self.window.attributes('-topmost', False)
+                debug("Used topmost attribute method")
+            except Exception as e:
+                warning(f"Topmost method failed: {e}")
+            
+            # Attempt to grab focus
+            try:
+                self.window.grab_set()
+                self.window.grab_release()
+                debug("Used grab_set/release method")
+            except Exception as e:
+                warning(f"Grab method failed: {e}")
+                
+        except Exception as e:
+            warning(f"Focus forcing failed: {e}")
+
+    def _check_window_visibility(self):
+        """Monitor window visibility and fix if needed"""
+        from debug_logger import debug, warning, error
+        
+        if not hasattr(self, 'window') or not self.window.winfo_exists():
+            error("Window no longer exists during visibility check")
+            return
+            
+        try:
+            is_mapped = bool(self.window.winfo_ismapped())
+            debug(f"Window mapped state: {is_mapped}")
+            
+            if not is_mapped and self.is_visible:
+                warning("Window should be visible but isn't mapped - forcing show")
+                self.window.deiconify()
+                self.window.focus_force()
+                
+                # Try resetting geometry
+                try:
+                    self._center_window()
+                    debug("Reset window geometry")
+                except Exception as e:
+                    warning(f"Could not reset geometry: {e}")
+                    
+            # Try updating again
+            try:
+                self.window.update_idletasks()
+            except Exception as e:
+                warning(f"Could not update idletasks: {e}")
+                
+            # Schedule another check - less frequent after first few checks
+            if hasattr(self, '_visibility_check_count'):
+                self._visibility_check_count += 1
+            else:
+                self._visibility_check_count = 1
+                
+            # Decay check frequency over time
+            if self._visibility_check_count < 5:
+                next_check = 1000  # 1 second for first 5 checks
+            elif self._visibility_check_count < 10:
+                next_check = 5000  # 5 seconds for next 5 checks
+            else:
+                next_check = 30000  # 30 seconds after that
+                
+            self.schedule_after(next_check, self._check_window_visibility)
+            
+        except Exception as e:
+            error(f"Error checking window visibility: {e}")
+            # Keep checking anyway
+            self.schedule_after(5000, self._check_window_visibility)
+
     def run(self):
         """Run the main menu"""
-        self.window.mainloop()
+        from debug_logger import transition, success, error, debug, info
+        
+        transition("MainMenu.run() called")
+        
+        # If was preloaded and not yet visible, show it first
+        if self.preload_only and not self.is_visible:
+            debug("Menu was preloaded but not visible, showing it first")
+            self.show()
+        
+        # Reset heartbeat before entering mainloop
+        self.last_heartbeat = time.time()
+        
+        # Start regular UI responsiveness checks
+        self.schedule_after(2000, self._check_ui_responsiveness)
+        
+        # Start mainloop if not already running
+        if hasattr(self, 'window') and self.window.winfo_exists():
+            try:
+                debug("Starting main menu mainloop")
+                
+                # Use safer mainloop approach that allows periodic event processing
+                self._safer_mainloop()
+                
+                success("Main menu mainloop completed")
+            except Exception as e:
+                error(f"Error in main menu mainloop: {e}")
+        else:
+            error("Cannot start mainloop - window does not exist or was destroyed")
 
+    def _safer_mainloop(self):
+        """A safer version of mainloop that ensures regular event processing"""
+        from debug_logger import debug, warning, error
+        
+        # First try the standard mainloop, but with a timeout
+        try:
+            # Set a regular update timer to ensure UI refreshes
+            def ensure_update():
+                try:
+                    if hasattr(self, 'window') and self.window.winfo_exists():
+                        # Process events explicitly
+                        self.window.update()
+                        # Reset heartbeat
+                        self.last_heartbeat = time.time()
+                        # Schedule next update
+                        self.window.after(200, ensure_update)
+                except Exception as e:
+                    warning(f"UI update failed: {e}")
+            
+            # Start the regular updates
+            self.window.after(200, ensure_update)
+            
+            # Now start mainloop with error handling
+            debug("Starting standard mainloop with safety checks")
+            self.window.mainloop()
+            debug("Standard mainloop completed")
+            
+        except Exception as e:
+            error(f"Standard mainloop failed: {e}")
+            # Fall back to manual event loop
+            self._manual_event_loop()
+
+    def _manual_event_loop(self):
+        """Fallback manual event loop to replace mainloop if it fails"""
+        from debug_logger import warning, debug
+        
+        warning("Using manual event loop as fallback")
+        
+        try:
+            running = True
+            
+            def process_events():
+                nonlocal running
+                try:
+                    if hasattr(self, 'window') and self.window.winfo_exists():
+                        # Update the root window to process events
+                        self.window.update()
+                        # Reset heartbeat
+                        self.last_heartbeat = time.time()
+                        # Schedule next event processing
+                        self.window.after(10, process_events)
+                    else:
+                        running = False
+                except Exception as e:
+                    warning(f"Manual event processing failed: {e}")
+                    running = False
+            
+            # Start event processing
+            process_events()
+            
+            # Wait until window is closed
+            import time
+            while running:
+                time.sleep(0.1)
+                
+            debug("Manual event loop completed")
+            
+        except Exception as e:
+            warning(f"Manual event loop failed: {e}")
 
 # For testing - run this file directly
 if __name__ == "__main__":

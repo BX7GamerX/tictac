@@ -1,439 +1,438 @@
 import os
-import tkinter as tk
-from PIL import Image, ImageTk, ImageSequence, ImageFont, ImageDraw
-import numpy as np
+import time
+from PIL import Image, ImageDraw, ImageTk, ImageSequence
 import customtkinter as ctk
+from utils import convert_to_ctk_image
 
-# Asset directory path
+# Define assets directory
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), "assets")
 
-# Create assets directory if it doesn't exist
-os.makedirs(ASSETS_DIR, exist_ok=True)
-
-# Default animation filenames
-DEFAULT_ANIMATIONS = {
-    "x_win": "x_win.gif",
-    "o_win": "o_win.gif",
-    "draw": "draw.gif",
-}
-
 class AssetManager:
-    """Class for managing game assets including images and animations"""
+    """Manager for game assets like images and animations"""
     
     def __init__(self):
-        self.cached_images = {}  # Cache for loaded images
-        self.cached_gifs = {}    # Cache for loaded GIF animations
-        self.icons = {}          # Cache for UI icons
+        """Initialize the asset manager"""
+        # Ensure assets directory exists
+        os.makedirs(ASSETS_DIR, exist_ok=True)
         
-    def get_asset_path(self, filename):
-        """Get full path to an asset file"""
-        return os.path.join(ASSETS_DIR, filename)
+        # Cache for loaded assets to prevent duplicated loading
+        self.image_cache = {}
+        self.animation_cache = {}
+        self.ctk_image_cache = {}
+        
+        # Known assets that can be generated if missing
+        self.known_assets = {
+            'x_symbol.png': self._generate_x_symbol,
+            'o_symbol.png': self._generate_o_symbol,
+            'game_over.png': self._generate_game_over,
+            'x_win.gif': self._generate_win_animation,
+            'o_win.gif': self._generate_win_animation,
+            'draw.gif': self._generate_draw_animation
+        }
     
-    def asset_exists(self, filename):
-        """Check if an asset file exists"""
-        if not filename:
-            return False
-        return os.path.exists(self.get_asset_path(filename))
-    
-    def load_image(self, filename, size=None):
-        """Load an image with optional resizing
+    def load_image(self, filename, size=None, fallback_generate=False):
+        """Load an image file
         
         Args:
-            filename (str): Image filename in assets directory
-            size (tuple): Optional (width, height) to resize image
+            filename (str): Image filename
+            size (tuple): Optional size to resize to (width, height)
+            fallback_generate (bool): Whether to generate placeholder if missing
             
         Returns:
-            CTkImage: CustomTkinter compatible image
+            PIL.Image: Loaded image or None if not found
         """
-        if not filename:
-            return None
-            
-        cache_key = f"{filename}_{size[0]}x{size[1]}" if size else filename
+        # Check cache first
+        cache_key = f"{filename}_{size}"
+        if cache_key in self.image_cache:
+            return self.image_cache[cache_key]
         
-        if cache_key in self.cached_images:
-            return self.cached_images[cache_key]
-            
-        try:
-            file_path = self.get_asset_path(filename)
-            if not os.path.exists(file_path):
+        # Load the image
+        filepath = os.path.join(ASSETS_DIR, filename)
+        
+        # Generate if missing and generation is supported
+        if not os.path.exists(filepath) and fallback_generate and filename in self.known_assets:
+            generate_func = self.known_assets[filename]
+            success = generate_func(filename)
+            if not success:
                 return None
+        
+        try:
+            if os.path.exists(filepath):
+                # Load and resize if needed
+                image = Image.open(filepath)
+                if size:
+                    image = image.resize(size, Image.LANCZOS)
                 
-            # Use CTkImage instead of ImageTk.PhotoImage
-            if size:
-                tk_image = ctk.CTkImage(light_image=Image.open(file_path), 
-                                       size=size)
-            else:
-                tk_image = ctk.CTkImage(light_image=Image.open(file_path))
-                
-            self.cached_images[cache_key] = tk_image
-            return tk_image
+                # Cache it
+                self.image_cache[cache_key] = image
+                return image
         except Exception as e:
             print(f"Error loading image {filename}: {e}")
+        
+        return None
+    
+    def get_ctk_image(self, filename, size=None, fallback_generate=False):
+        """Get a CTkImage for use with CustomTkinter
+        
+        Args:
+            filename (str): Image filename
+            size (tuple): Optional size to resize to (width, height)
+            fallback_generate (bool): Whether to generate placeholder if missing
+            
+        Returns:
+            CTkImage: CustomTkinter image or None if not found
+        """
+        # Check cache first
+        cache_key = f"ctk_{filename}_{size}"
+        if cache_key in self.ctk_image_cache:
+            return self.ctk_image_cache[cache_key]
+        
+        # Load the PIL image
+        pil_image = self.load_image(filename, size, fallback_generate)
+        if not pil_image:
             return None
+        
+        # Convert to CTkImage
+        try:
+            ctk_image = convert_to_ctk_image(pil_image, size)
+            
+            # Cache it
+            self.ctk_image_cache[cache_key] = ctk_image
+            return ctk_image
+        except Exception as e:
+            print(f"Error converting to CTkImage: {e}")
+            return None
+    
+    def get_animation_path(self, name):
+        """Get path to an animation file
+        
+        Args:
+            name (str): Animation name (e.g., 'x_win', 'draw')
+            
+        Returns:
+            str: Path to animation file or None if not found
+        """
+        # Try different extensions
+        extensions = ['.gif']
+        
+        for ext in extensions:
+            path = os.path.join(ASSETS_DIR, f"{name}{ext}")
+            if os.path.exists(path):
+                return path
+        
+        return None
+    
+    def preload_animation(self, filename, size=None):
+        """Preload animation frames for future use
+        
+        Args:
+            filename (str): Animation filename
+            size (tuple): Optional size to resize frames to
+            
+        Returns:
+            list: List of animation frames as CTkImage objects
+        """
+        # Check cache first
+        cache_key = f"{filename}_{size}"
+        if cache_key in self.animation_cache:
+            return self.animation_cache[cache_key]
+        
+        # Load animation
+        filepath = os.path.join(ASSETS_DIR, filename)
+        
+        try:
+            if os.path.exists(filepath):
+                from utils import load_gif_frames_as_ctk
+                frames = load_gif_frames_as_ctk(filepath, size)
+                
+                # Cache it
+                self.animation_cache[cache_key] = frames
+                return frames
+        except Exception as e:
+            print(f"Error preloading animation {filename}: {e}")
+        
+        return []
     
     def load_gif_frames(self, filename, size=None):
-        """Load all frames from a GIF animation
+        """Load frames from a GIF animation
         
         Args:
-            filename (str): GIF filename in assets directory
-            size (tuple): Optional (width, height) to resize frames
+            filename (str): GIF filename
+            size (tuple): Optional size to resize frames to (width, height)
             
         Returns:
-            list: List of CTkImage frames
+            list: List of PhotoImage frames
         """
-        if not filename:
-            return []
-            
-        cache_key = f"{filename}_frames_{size[0]}x{size[1]}" if size else f"{filename}_frames"
-        
-        if cache_key in self.cached_gifs:
-            return self.cached_gifs[cache_key]
-            
-        try:
-            file_path = self.get_asset_path(filename)
-            if not os.path.exists(file_path):
-                return []
-                
-            gif = Image.open(file_path)
-            frames = []
-            
-            # Extract frames from GIF
-            frame_count = 0
-            raw_frames = []
-            for frame in ImageSequence.Iterator(gif):
-                frame_copy = frame.copy().convert("RGBA") # Convert to RGBA for transparency
-                if size:
-                    frame_copy = frame_copy.resize(size)
-                raw_frames.append(frame_copy)
-                frame_count += 1
-                
-                # Limit to reasonable number of frames
-                if frame_count >= 50:  # Avoid excessive memory use
-                    break
-            
-            # Convert frames to CTkImage objects
-            for i, frame in enumerate(raw_frames):
-                # Create CTkImage for each frame
-                ctk_frame = ctk.CTkImage(light_image=frame, size=size)
-                frames.append(ctk_frame)
-                
-            self.cached_gifs[cache_key] = frames
-            return frames
-        except Exception as e:
-            print(f"Error loading GIF {filename}: {e}")
-            return []
+        # For backward compatibility
+        return self.preload_animation(filename, size)
     
-    def get_animation_path(self, animation_name):
-        """Get full path to an animation file
-        
-        Args:
-            animation_name (str): Name of animation (x_win, o_win, draw)
-            
-        Returns:
-            str: Full path to animation file or None if not found
-        """
-        if animation_name in DEFAULT_ANIMATIONS:
-            filename = DEFAULT_ANIMATIONS[animation_name]
-            full_path = self.get_asset_path(filename)
-            if os.path.exists(full_path):
-                return full_path
-        return None
-
-    def create_symbol_image(self, symbol, size=(80, 80), style="modern"):
-        """Create a custom symbol image (X or O)"""
-        try:
-            # Create a blank transparent image with padding for better visibility
-            padded_size = (int(size[0] * 1.1), int(size[1] * 1.1))
-            image = Image.new('RGBA', padded_size, (0, 0, 0, 0))
-            draw = ImageDraw.Draw(image)
-            
-            # Get effective dimensions for drawing
-            width, height = size
-            
-            # Center offset to account for padding
-            offset_x = (padded_size[0] - width) // 2
-            offset_y = (padded_size[1] - height) // 2
-            
-            symbol = symbol.upper()
-            
-            # Vibrant colors for better visibility
-            x_colors = {
-                "modern": "#4361EE",
-                "neon": "#00FF00",  # Bright green
-                "classic": "#4F85CC"
-            }
-            
-            o_colors = {
-                "modern": "#F72585",
-                "neon": "#FF0066",  # Bright pink
-                "classic": "#CC4F85"
-            }
-            
-            # Get appropriate color
-            x_color = x_colors.get(style, x_colors["modern"])
-            o_color = o_colors.get(style, o_colors["modern"])
-            
-            # Use thicker lines for better visibility
-            line_width = max(int(min(width, height) * 0.08), 5)
-            
-            if symbol == "X":
-                # Calculate parameters for X
-                margin = int(width * 0.15)
-                thickness = max(int(width * 0.2), 6)  # Even thicker
-                
-                # Draw X with thicker lines and offset for padding
-                for i in range(-thickness//2, thickness//2 + 1):
-                    # First diagonal (top-left to bottom-right)
-                    draw.line(
-                        [(offset_x + margin + i, offset_y + margin), 
-                         (offset_x + width - margin + i, offset_y + height - margin)],
-                        fill=x_color,
-                        width=line_width
-                    )
-                    
-                    # Second diagonal (top-right to bottom-left)
-                    draw.line(
-                        [(offset_x + width - margin + i, offset_y + margin), 
-                         (offset_x + margin + i, offset_y + height - margin)],
-                        fill=x_color,
-                        width=line_width
-                    )
-                    
-            elif symbol == "O":
-                # Calculate parameters for O
-                margin = int(width * 0.15)
-                thickness = max(int(width * 0.15), 5)  # Thicker
-                
-                # Draw O as a thick circle with offset for padding
-                for i in range(thickness):
-                    offset = i - thickness//2
-                    radius_x = (width - 2*margin) // 2
-                    radius_y = (height - 2*margin) // 2
-                    
-                    # Calculate bounding box for ellipse with padding offset
-                    x1 = offset_x + width//2 - radius_x + offset
-                    y1 = offset_y + height//2 - radius_y + offset
-                    x2 = offset_x + width//2 + radius_x + offset
-                    y2 = offset_y + height//2 + radius_y + offset
-                    
-                    draw.ellipse([x1, y1, x2, y2], outline=o_color, width=line_width)
-            
-            # Convert to CTkImage for CustomTkinter
-            ctk_image = ctk.CTkImage(
-                light_image=image, 
-                dark_image=image,
-                size=padded_size  # Use the padded size
-            )
-            return ctk_image
-            
-        except Exception as e:
-            print(f"Error creating symbol image: {e}")
-            return None
-    
-    def create_icon(self, icon_name, size=(24, 24), color="#FFFFFF"):
-        """Create a simple geometric icon for UI elements
-        
-        Args:
-            icon_name (str): Name of icon to create
-            size (tuple): Icon dimensions
-            color (str): Color of the icon
-            
-        Returns:
-            CTkImage: Icon image for CustomTkinter
-        """
-        cache_key = f"{icon_name}_{size[0]}x{size[1]}_{color}"
-        
-        if cache_key in self.icons:
-            return self.icons[cache_key]
-        
-        try:
-            # Create blank transparent image
-            image = Image.new('RGBA', size, (0, 0, 0, 0))
-            draw = ImageDraw.Draw(image)
-            
-            width, height = size
-            
-            if icon_name == "checkmark":
-                # Draw checkmark
-                points = [
-                    (width * 0.2, height * 0.5),
-                    (width * 0.4, height * 0.7),
-                    (width * 0.8, height * 0.3)
-                ]
-                draw.line(points, fill=color, width=2)
-                
-            elif icon_name == "cross":
-                # Draw X
-                margin = width * 0.2
-                draw.line([(margin, margin), (width - margin, height - margin)], fill=color, width=2)
-                draw.line([(width - margin, margin), (margin, height - margin)], fill=color, width=2)
-                
-            elif icon_name == "reload":
-                # Draw reload/refresh icon
-                margin = width * 0.2
-                # Draw circle
-                draw.arc(
-                    [margin, margin, width - margin, height - margin],
-                    start=30, end=330, fill=color, width=2
-                )
-                # Draw arrow
-                arrow_points = [
-                    (width * 0.65, margin), 
-                    (width * 0.8, margin * 1.5),
-                    (width * 0.7, margin * 2)
-                ]
-                draw.line(arrow_points, fill=color, width=2)
-            
-            # Convert to CTkImage for CustomTkinter
-            ctk_image = ctk.CTkImage(light_image=image, size=size)
-            self.icons[cache_key] = ctk_image
-            return ctk_image
-            
-        except Exception as e:
-            print(f"Error creating icon {icon_name}: {e}")
-            return None
-            
-    def clear_cache(self):
-        """Clear all cached assets"""
-        self.cached_images = {}
-        self.cached_gifs = {}
-        self.icons = {}
-        
     def generate_placeholder_animations(self):
-        """Generate placeholder animations if real ones don't exist
+        """Generate placeholder animations for standard game events"""
+        # Generate each animation if it doesn't exist
+        for name in ['x_win.gif', 'o_win.gif', 'draw.gif']:
+            self.get_animation_path(name.split('.')[0])  # Just get the name part
+            
+            # Generate if missing
+            filepath = os.path.join(ASSETS_DIR, name)
+            if not os.path.exists(filepath):
+                if name in self.known_assets:
+                    generate_func = self.known_assets[name]
+                    generate_func(name)
         
-        Creates simple animations for win/draw cases that can be used
-        if no GIF files are available
-        """
-        # X win animation
-        if not self.asset_exists(DEFAULT_ANIMATIONS["x_win"]):
-            self._create_placeholder_animation("x_win", "X", frames=10)
-            
-        # O win animation
-        if not self.asset_exists(DEFAULT_ANIMATIONS["o_win"]):
-            self._create_placeholder_animation("o_win", "O", frames=10)
-            
-        # Draw animation
-        if not self.asset_exists(DEFAULT_ANIMATIONS["draw"]):
-            self._create_placeholder_animation("draw", "=", frames=10)
+        return True
     
-    def _create_placeholder_animation(self, name, symbol, frames=10, size=(200, 150)):
-        """Internal method to create a placeholder animation
+    def _generate_x_symbol(self, filename):
+        """Generate a placeholder X symbol image
         
         Args:
-            name (str): Animation name
-            symbol (str): Symbol to display
-            frames (int): Number of frames
-            size (tuple): Image size
+            filename (str): Target filename
+            
+        Returns:
+            bool: True if generated successfully, False otherwise
         """
         try:
-            images = []
-            width, height = size
+            # Create X symbol
+            size = (200, 200)
+            image = Image.new("RGBA", size, (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
             
-            # Use simple shapes instead of text to avoid font issues
-            for i in range(frames):
-                # Create frame
-                image = Image.new('RGB', size, (30, 30, 30))
-                draw = ImageDraw.Draw(image)
+            # X color
+            x_color = (79, 133, 204, 255)  # Blue X
+            
+            # Draw X
+            line_width = 20
+            padding = 20
+            draw.line([(padding, padding), (size[0] - padding, size[1] - padding)], fill=x_color, width=line_width)
+            draw.line([(size[0] - padding, padding), (padding, size[1] - padding)], fill=x_color, width=line_width)
+            
+            # Save
+            filepath = os.path.join(ASSETS_DIR, filename)
+            image.save(filepath)
+            
+            print(f"Generated X symbol at {filepath}")
+            return True
+        except Exception as e:
+            print(f"Error generating X symbol: {e}")
+            return False
+    
+    def _generate_o_symbol(self, filename):
+        """Generate a placeholder O symbol image
+        
+        Args:
+            filename (str): Target filename
+            
+        Returns:
+            bool: True if generated successfully, False otherwise
+        """
+        try:
+            # Create O symbol
+            size = (200, 200)
+            image = Image.new("RGBA", size, (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
+            
+            # O color
+            o_color = (255, 92, 141, 255)  # Pink O
+            
+            # Draw circle
+            padding = 20
+            line_width = 20
+            draw.ellipse(
+                [(padding, padding), (size[0] - padding, size[1] - padding)],
+                outline=o_color,
+                width=line_width
+            )
+            
+            # Save
+            filepath = os.path.join(ASSETS_DIR, filename)
+            image.save(filepath)
+            
+            print(f"Generated O symbol at {filepath}")
+            return True
+        except Exception as e:
+            print(f"Error generating O symbol: {e}")
+            return False
+    
+    def _generate_game_over(self, filename):
+        """Generate a placeholder game over image
+        
+        Args:
+            filename (str): Target filename
+            
+        Returns:
+            bool: True if generated successfully, False otherwise
+        """
+        try:
+            # Create game over image
+            size = (400, 100)
+            image = Image.new("RGBA", size, (0, 0, 0, 128))
+            draw = ImageDraw.Draw(image)
+            
+            # Draw text
+            text = "GAME OVER"
+            
+            # Calculate text position (center)
+            try:
+                # Use ImageFont if available
+                from PIL import ImageFont
+                font = ImageFont.truetype("arial.ttf", 36)
+                text_size = draw.textlength(text, font=font)
+                x = (size[0] - text_size) // 2
                 
-                # Animation factor (pulsating effect)
-                scale = 0.5 + 0.5 * np.sin(i / frames * 2 * np.pi)
-                color_val = int(155 + 100 * scale)
+                # Draw with font
+                draw.text((x, 30), text, fill=(255, 255, 255, 255), font=font)
+            except Exception:
+                # Fallback if font not available
+                x = size[0] // 4
+                draw.text((x, 30), text, fill=(255, 255, 255, 255))
+            
+            # Save
+            filepath = os.path.join(ASSETS_DIR, filename)
+            image.save(filepath)
+            
+            print(f"Generated game over image at {filepath}")
+            return True
+        except Exception as e:
+            print(f"Error generating game over image: {e}")
+            return False
+    
+    def _generate_win_animation(self, filename):
+        """Generate a win animation
+        
+        Args:
+            filename (str): Target filename
+            
+        Returns:
+            bool: True if generated successfully, False otherwise
+        """
+        try:
+            # Figure out which player this is for
+            player = 1 if 'x_win' in filename.lower() else 2
+            
+            # Create a series of frames with win animation
+            frames = []
+            size = (200, 150)
+            bg_color = (42, 42, 42, 200)
+            
+            # Player colors
+            colors = {
+                1: (79, 133, 204, 255),  # X: Blue
+                2: (255, 92, 141, 255)   # O: Pink
+            }
+            color = colors[player]
+            
+            # Player symbols
+            symbols = {1: "X", 2: "O"}
+            symbol = symbols[player]
+            
+            # Generate frames
+            num_frames = 15
+            for i in range(num_frames):
+                # Create a new frame
+                frame = Image.new("RGBA", size, bg_color)
+                draw = ImageDraw.Draw(frame)
                 
-                # Symbol color
-                if symbol == "X":
-                    color = (color_val, 100, 255)  # Blue-ish for X
-                elif symbol == "O":
-                    color = (255, 100, color_val)  # Pink-ish for O
-                else:
-                    color = (color_val, color_val, 100)  # Yellow-ish for draw
+                # Animation phase - growing and shrinking
+                scale = 1.0 + 0.3 * abs(i - num_frames // 2) / (num_frames // 2)
                 
-                # Calculate size based on scale
-                symbol_size = int(min(width, height) * 0.5 * (0.8 + 0.2 * scale))
-                margin = (min(width, height) - symbol_size) // 2
-                thickness = max(int(symbol_size * 0.1), 3)
+                # Draw text with growing/shrinking effect
+                text = f"{symbol} WINS!"
                 
-                # Center coordinates
-                center_x = width // 2
-                center_y = height // 2
-                
-                # Draw appropriate symbol using shapes only (no text)
-                if symbol == "X":
-                    # Draw X as two crossing lines
-                    x_margin = symbol_size // 2
-                    draw.line(
-                        [(center_x - x_margin, center_y - x_margin), 
-                         (center_x + x_margin, center_y + x_margin)], 
-                        fill=color, width=thickness
-                    )
-                    draw.line(
-                        [(center_x + x_margin, center_y - x_margin), 
-                         (center_x - x_margin, center_y + x_margin)], 
-                        fill=color, width=thickness
-                    )
-                elif symbol == "O":
-                    # Draw O as a circle
-                    x1 = center_x - symbol_size // 2
-                    y1 = center_y - symbol_size // 2
-                    x2 = center_x + symbol_size // 2
-                    y2 = center_y + symbol_size // 2
-                    draw.ellipse([x1, y1, x2, y2], outline=color, width=thickness)
-                else:
-                    # Draw equals sign for draw
-                    rect_height = symbol_size // 5
-                    spacing = rect_height
+                # Calculate text position and size
+                try:
+                    # Use ImageFont if available
+                    from PIL import ImageFont
+                    font_size = int(36 * scale)
+                    font = ImageFont.truetype("arial.ttf", font_size)
+                    text_size = draw.textlength(text, font=font)
+                    x = (size[0] - text_size) // 2
                     
-                    # Top bar
-                    draw.rectangle(
-                        [center_x - symbol_size//2, center_y - spacing - rect_height, 
-                         center_x + symbol_size//2, center_y - spacing], 
-                        fill=color
-                    )
-                    
-                    # Bottom bar
-                    draw.rectangle(
-                        [center_x - symbol_size//2, center_y + spacing, 
-                         center_x + symbol_size//2, center_y + spacing + rect_height], 
-                        fill=color
-                    )
+                    # Draw with scaling
+                    draw.text((x, 50), text, fill=color, font=font)
+                except Exception:
+                    # Fallback if font not available
+                    x = size[0] // 4
+                    draw.text((x, 50), text, fill=color)
                 
-                # Add sparkle/star effects
-                if i % 2 == 0:
-                    for _ in range(8):
-                        # Random positions around the symbol
-                        angle = np.random.uniform(0, 2 * np.pi)
-                        distance = np.random.uniform(0.6, 1.0) * symbol_size
-                        x = int(center_x + np.cos(angle) * distance)
-                        y = int(center_y + np.sin(angle) * distance)
-                        
-                        # Star size varies
-                        star_size = np.random.randint(2, 6)
-                        
-                        # Draw simple sparkle dot
-                        brightness = int(200 + 55 * scale)
-                        sparkle_color = (brightness, brightness, brightness)
-                        draw.ellipse(
-                            [x - star_size, y - star_size, 
-                             x + star_size, y + star_size], 
-                            fill=sparkle_color
-                        )
-                
-                images.append(image)
+                frames.append(frame)
             
             # Save as GIF
-            filename = DEFAULT_ANIMATIONS[name]
-            filepath = self.get_asset_path(filename)
-            images[0].save(
+            filepath = os.path.join(ASSETS_DIR, filename)
+            frames[0].save(
                 filepath,
                 save_all=True,
-                append_images=images[1:],
-                optimize=False,
+                append_images=frames[1:],
                 duration=100,
                 loop=0
             )
-            print(f"Successfully created placeholder animation: {filename}")
-            return True
             
+            print(f"Generated win animation at {filepath}")
+            return True
         except Exception as e:
-            print(f"Error creating placeholder animation: {e}")
+            print(f"Error generating win animation: {e}")
+            return False
+    
+    def _generate_draw_animation(self, filename):
+        """Generate a draw animation
+        
+        Args:
+            filename (str): Target filename
+            
+        Returns:
+            bool: True if generated successfully, False otherwise
+        """
+        try:
+            # Create a series of frames with draw animation
+            frames = []
+            size = (200, 150)
+            bg_color = (42, 42, 42, 200)
+            
+            # Generate frames
+            num_frames = 15
+            for i in range(num_frames):
+                # Create a new frame
+                frame = Image.new("RGBA", size, bg_color)
+                draw = ImageDraw.Draw(frame)
+                
+                # Animation phase - color changing
+                phase = i / num_frames
+                r = int(255 * (0.5 + 0.5 * abs(phase - 0.5) * 2))
+                g = int(200 * phase)
+                b = int(100 * (1 - phase))
+                color = (r, g, b, 255)
+                
+                # Draw text with color change
+                text = "DRAW!"
+                
+                # Calculate text position and size
+                try:
+                    # Use ImageFont if available
+                    from PIL import ImageFont
+                    font_size = 36
+                    font = ImageFont.truetype("arial.ttf", font_size)
+                    text_size = draw.textlength(text, font=font)
+                    x = (size[0] - text_size) // 2
+                    
+                    # Draw with color change
+                    draw.text((x, 50), text, fill=color, font=font)
+                except Exception:
+                    # Fallback if font not available
+                    x = size[0] // 4
+                    draw.text((x, 50), text, fill=color)
+                
+                frames.append(frame)
+            
+            # Save as GIF
+            filepath = os.path.join(ASSETS_DIR, filename)
+            frames[0].save(
+                filepath,
+                save_all=True,
+                append_images=frames[1:],
+                duration=100,
+                loop=0
+            )
+            
+            print(f"Generated draw animation at {filepath}")
+            return True
+        except Exception as e:
+            print(f"Error generating draw animation: {e}")
             return False

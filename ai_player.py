@@ -12,19 +12,47 @@ class AIPlayer:
     def __init__(self):
         """Initialize AI player"""
         self.model = None
-        # Try to load existing model
-        self._load_model()
+        # Try to load existing model - with better error handling
+        try:
+            self._load_model()
+        except Exception as e:
+            print(f"Warning: Could not load AI model: {e}")
+            # Don't raise exception to allow app to continue
     
     def _load_model(self):
         """Load trained model if it exists"""
+        from debug_logger import info, warning, error, debug
+        
         try:
+            debug(f"Checking for AI model at: {self.MODEL_PATH}")
             if os.path.exists(self.MODEL_PATH):
+                # Check if file is empty before attempting to load
+                file_size = os.path.getsize(self.MODEL_PATH)
+                debug(f"AI model file size: {file_size} bytes")
+                
+                if file_size == 0:
+                    warning("AI model file is empty, will need retraining")
+                    return False
+                    
                 with open(self.MODEL_PATH, 'rb') as f:
-                    self.model = pickle.load(f)
-                return True
+                    try:
+                        debug("Loading AI model from file")
+                        self.model = pickle.load(f)
+                        info("AI model loaded successfully")
+                        return True
+                    except EOFError:
+                        warning("AI model file is corrupted, will need retraining")
+                        return False
+            else:
+                info("AI model file does not exist, will need training")
+            return False
+        except EOFError:
+            warning("AI model file is empty or corrupted, will need retraining")
             return False
         except Exception as e:
-            print(f"Error loading AI model: {e}")
+            error(f"Error loading AI model: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _save_model(self):
@@ -234,6 +262,8 @@ class AIPlayer:
             tuple: (row, col) for the next move, or (None, None) if no valid move
         """
         if not self.model_exists():
+            # Clearly log that we're using a random move due to missing model
+            print("AI model not available, using random move instead")
             return self._get_random_move(board)
         
         try:

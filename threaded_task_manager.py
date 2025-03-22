@@ -133,17 +133,18 @@ class ThreadedTaskManager:
                                 print("Skipping callback for closing application")
                                 continue
                         
-                        callback(result)
-                    except _tkinter.TclError as e:
-                        if "application has been destroyed" in str(e) or "can't invoke" in str(e):
-                            print("Skipping callback - application has been destroyed")
+                        # Check if we need to use after() to schedule on main thread
+                        if self._is_tkinter_callback(callback):
+                            self._schedule_on_main_thread(callback, result)
                         else:
-                            print(f"Tkinter error in callback: {e}")
+                            # Non-UI callback, call directly
+                            callback(result)
+                            
                     except Exception as e:
                         print(f"Error in success callback: {e}")
                         traceback.print_exc()
                 elif result_type == 'error':
-                    # Call error callback with better error handling
+                    # Similar error handling for error callbacks...
                     try:
                         # Skip callback if it's a method of an object with is_closing=True
                         if hasattr(callback, '__self__') and hasattr(callback.__self__, 'is_closing'):
@@ -163,12 +164,77 @@ class ThreadedTaskManager:
                 
                 # Mark task as done
                 self.result_queue.task_done()
+                
             except queue.Empty:
                 # No results in queue, just continue
                 continue
             except Exception as e:
                 print(f"Error processing task result: {e}")
                 traceback.print_exc()
+
+    def _is_tkinter_callback(self, callback):
+        """Check if a callback is likely to involve Tkinter operations
+        
+        Args:
+            callback: Callback function to check
+            
+        Returns:
+            bool: True if callback likely involves Tkinter
+        """
+        # Check if it's a method of a class with Tkinter-like attributes
+        if hasattr(callback, '__self__'):
+            obj = callback.__self__
+            
+            # Common tkinter attributes to check for
+            tkinter_attrs = ['tk', 'master', 'winfo_exists', 'after', 'configure', 
+                             'window', 'root', 'frame', 'label', 'button', 'pack', 'grid']
+            
+            # Check if object has any Tkinter-like attributes
+            return any(hasattr(obj, attr) for attr in tkinter_attrs)
+        
+        return False
+        
+    def _schedule_on_main_thread(self, callback, result):
+        """Schedule a callback to run on the main thread
+        
+        Args:
+            callback: Callback function to run
+            result: Result to pass to the callback
+        """
+        # Check if callback object has a window, master, or other Tkinter root
+        root = None
+        if hasattr(callback, '__self__'):
+            obj = callback.__self__
+            
+            # Try common Tkinter root attributes
+            for attr in ['window', 'root', 'master', 'tk', 'app', 'frame']:
+                if hasattr(obj, attr):
+                    potential_root = getattr(obj, attr)
+                    if hasattr(potential_root, 'after') and hasattr(potential_root, 'winfo_exists'):
+                        try:
+                            # Thread-safe check using careful exception handling
+                            try_exists = False
+                            if threading.current_thread() is threading.main_thread():
+                                try_exists = potential_root.winfo_exists()
+                            
+                            if try_exists:
+                                root = potential_root
+                                break
+                        except:
+                            # Skip if checking existence raises error
+                            continue
+        
+        if root:
+            try:
+                # Schedule callback on main thread
+                root.after(0, lambda: callback(result))
+            except Exception as e:
+                print(f"Error scheduling on main thread: {e}")
+                # Fall back to direct call
+                callback(result)
+        else:
+            # No root found, call directly
+            callback(result)
 
     def shutdown(self):
         """Shut down the task manager"""

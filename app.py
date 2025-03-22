@@ -465,10 +465,37 @@ class TicTacToeApp:
         )
         loading_label.pack(pady=20)
         
+        # Try to get data from data manager first (which was loaded at startup)
+        try:
+            from data_manager import GameDataManager
+            data_manager = GameDataManager.get_instance()
+            
+            if data_manager and data_manager.has('game_history'):
+                # Use the already loaded data
+                print("Using pre-loaded game history data")
+                self.history_games = data_manager.get('game_history', {})
+                
+                # Sort game IDs by timestamp
+                self.sorted_game_ids = sorted(
+                    self.history_games.keys(),
+                    key=lambda gid: self.history_games[gid].get('timestamp', gid),
+                    reverse=True
+                )
+                
+                # Update UI immediately
+                self._update_history_ui()
+                return
+        except Exception as e:
+            print(f"Error getting history from data manager: {e}")
+        
+        # If data manager doesn't have it, load directly
+        self._load_history_directly()
+
+    def _load_history_directly(self):
+        """Fallback method to load history directly if not in data manager"""
         # Force UI update to show loading screen
         self.root.update_idletasks()
         
-        # Load game history in a background thread with proper UI reference
         def load_history_data():
             try:
                 # Try to use the game data integration system
@@ -488,6 +515,15 @@ class TicTacToeApp:
                     reverse=True
                 )
                 
+                # Store in data manager for future use
+                try:
+                    from data_manager import GameDataManager
+                    data_manager = GameDataManager.get_instance()
+                    if data_manager:
+                        data_manager.set('game_history', self.history_games, notify=False)
+                except Exception:
+                    pass
+                    
                 return True
             except Exception as e:
                 print(f"Error loading game history: {e}")
@@ -495,8 +531,7 @@ class TicTacToeApp:
                 traceback.print_exc()
                 return False
         
-        # Callback when history data is loaded - ensure it has direct reference to the widget
-        # and checks widget existence before updating UI
+        # Callback when history data is loaded
         def on_history_loaded(success):
             # Skip update if application is closing or destroyed
             if getattr(self, 'is_closing', True) or not hasattr(self, 'root') or not self.root.winfo_exists():
@@ -504,7 +539,7 @@ class TicTacToeApp:
                 return
             self._update_history_ui()
         
-        # Run in background with explicit UI reference
+        # Run in background
         from threaded_task_manager import run_in_background
         run_in_background(load_history_data, on_history_loaded)
     
